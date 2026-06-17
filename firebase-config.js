@@ -1,15 +1,10 @@
-// ─────────────────────────────────────────────────────────────
-//  FORZA FOOD HUB — Firebase Configuration
-//  Replace every value below with the ones from your Firebase
-//  project console → Project Settings → Your apps → SDK setup
-// ─────────────────────────────────────────────────────────────
 const firebaseConfig = {
-  apiKey:            "PASTE_YOUR_API_KEY_HERE",
-  authDomain:        "PASTE_YOUR_PROJECT_ID.firebaseapp.com",
-  projectId:         "PASTE_YOUR_PROJECT_ID",
-  storageBucket:     "PASTE_YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "PASTE_YOUR_SENDER_ID",
-  appId:             "PASTE_YOUR_APP_ID"
+  apiKey:            "AIzaSyDv-suSTi9VA0z0uENsRG_9YVzYT4D5ocY",
+  authDomain:        "forzafood-82d93.firebaseapp.com",
+  projectId:         "forzafood-82d93",
+  storageBucket:     "forzafood-82d93.firebasestorage.app",
+  messagingSenderId: "439515361367",
+  appId:             "1:439515361367:web:bdc5e9c9cf4949e9ad3312"
 };
 
 firebase.initializeApp(firebaseConfig);
