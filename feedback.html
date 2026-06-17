@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Leave Feedback — FORZA FOOD HUB</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Poppins','sans-serif'] } } } }</script>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'Poppins', sans-serif; background: #f0f9ff; }
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-thumb { background: #0ea5e9; border-radius: 4px; }
+
+    .pg-hdr { background:#fff; border-bottom:1px solid #e0f2fe; position:sticky; top:0; z-index:50; box-shadow:0 2px 12px rgba(14,165,233,.08); }
+    .pg-hdr-inner { max-width:1100px; margin:0 auto; padding:0 24px; height:64px; display:flex; align-items:center; justify-content:space-between; }
+    .logo-link { display:flex; align-items:center; gap:10px; text-decoration:none; }
+    .logo-plate { width:36px; height:36px; background:#0ea5e9; border-radius:9px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:14px; }
+    .logo-txt { font-size:1.15rem; font-weight:900; color:#0f172a; }
+    .back-btn { display:inline-flex; align-items:center; gap:7px; background:#f0f9ff; color:#0ea5e9; border:1.5px solid #bae6fd; border-radius:8px; padding:7px 15px; font-size:13px; font-weight:600; text-decoration:none; transition:all .2s; }
+    .back-btn:hover { background:#0ea5e9; color:#fff; border-color:#0ea5e9; }
+    .pg-wrap { max-width:780px; margin:0 auto; padding:36px 24px 60px; }
+
+    /* Card */
+    .card { background:#fff; border-radius:18px; border:1px solid #e0f2fe; overflow:hidden; box-shadow:0 4px 18px rgba(14,165,233,.08); }
+    .card-head { padding:24px 28px; border-bottom:1px solid #f0f9ff; background:linear-gradient(135deg,#075985,#0ea5e9); }
+
+    /* Star rating */
+    .star-row { display:flex; gap:10px; justify-content:center; margin:10px 0 4px; }
+    .star-btn { font-size:2.2rem; color:#cbd5e1; cursor:pointer; transition:color .15s, transform .15s; border:none; background:none; padding:2px; line-height:1; }
+    .star-btn:hover, .star-btn.lit { color:#f59e0b; transform:scale(1.2); }
+    .star-label { text-align:center; font-size:13px; font-weight:600; color:#64748b; min-height:20px; }
+
+    /* Category rating */
+    .cat-row { display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid #f0f9ff; }
+    .cat-row:last-child { border-bottom:none; }
+    .cat-name { font-size:13.5px; font-weight:600; color:#0f172a; }
+    .mini-stars { display:flex; gap:5px; }
+    .mini-star { font-size:1.2rem; color:#cbd5e1; cursor:pointer; transition:color .12s; }
+    .mini-star.lit { color:#f59e0b; }
+
+    /* Form */
+    .form-label { font-size:12.5px; font-weight:600; color:#475569; margin-bottom:6px; display:block; }
+    .form-input { width:100%; border:1.5px solid #e0f2fe; border-radius:9px; padding:10px 14px; font-family:'Poppins',sans-serif; font-size:13.5px; color:#0f172a; outline:none; transition:border .2s; background:#f8fafc; }
+    .form-input:focus { border-color:#0ea5e9; background:#fff; }
+    textarea.form-input { resize:vertical; min-height:110px; }
+    select.form-input { appearance:none; cursor:pointer; }
+
+    /* Tag chips */
+    .tag-chip { border:1.5px solid #bae6fd; border-radius:50px; padding:6px 14px; font-size:12.5px; font-weight:600; color:#0369a1; background:#f0f9ff; cursor:pointer; transition:all .2s; user-select:none; }
+    .tag-chip.selected { background:#0ea5e9; color:#fff; border-color:#0ea5e9; }
+
+    /* Buttons */
+    .btn-sky { background:linear-gradient(135deg,#0284c7,#0ea5e9); color:#fff; border:none; border-radius:10px; padding:13px 28px; font-family:'Poppins',sans-serif; font-size:14px; font-weight:700; cursor:pointer; transition:opacity .2s; }
+    .btn-sky:hover { opacity:.88; }
+    .btn-outline { background:#fff; color:#0ea5e9; border:1.5px solid #bae6fd; border-radius:10px; padding:12px 22px; font-family:'Poppins',sans-serif; font-size:14px; font-weight:600; cursor:pointer; transition:all .2s; }
+    .btn-outline:hover { background:#f0f9ff; }
+
+    /* Success state */
+    .success-state { display:none; text-align:center; padding:50px 24px; }
+    .success-icon { width:80px; height:80px; border-radius:50%; background:linear-gradient(135deg,#dcfce7,#bbf7d0); display:flex; align-items:center; justify-content:center; margin:0 auto 20px; font-size:2.5rem; }
+
+    /* Recent reviews */
+    .review-card { background:#f8fafc; border-radius:12px; padding:16px; border:1px solid #e0f2fe; margin-bottom:12px; }
+
+    /* Toast */
+    #toast { position:fixed; bottom:28px; right:28px; z-index:999; background:#0f172a; color:#fff; border-radius:12px; padding:13px 22px; font-size:13.5px; font-weight:600; display:flex; align-items:center; gap:10px; opacity:0; transform:translateX(90px); pointer-events:none; transition:opacity .3s, transform .3s; }
+    #toast.show { opacity:1; transform:translateX(0); }
+    .pg-footer { background:#0f172a; color:#64748b; text-align:center; padding:24px; font-size:12.5px; }
+    .pg-footer a { color:#0ea5e9; text-decoration:none; }
+  </style>
+</head>
+<body>
+
+<div id="toast"><i class="fas fa-check-circle" style="color:#4ade80"></i><span id="toastMsg"></span></div>
+
+<!-- Header -->
+<header class="pg-hdr">
+  <div class="pg-hdr-inner">
+    <a href="index.html" class="logo-link">
+      <div class="logo-plate"><i class="fas fa-utensils"></i></div>
+      <span class="logo-txt">FORZA</span>
+    </a>
+    <a href="index.html" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Home</a>
+  </div>
+</header>
+
+<div class="pg-wrap">
+  <p style="font-size:12.5px;color:#94a3b8;margin-bottom:22px">
+    <a href="index.html" style="color:#0ea5e9;text-decoration:none">Home</a> &rsaquo; Leave Feedback
+  </p>
+
+  <div style="margin-bottom:24px">
+    <h1 style="font-size:1.7rem;font-weight:900;color:#0f172a;margin:0 0 4px">Leave Feedback</h1>
+    <p style="font-size:13.5px;color:#64748b;margin:0">Your opinion helps us serve you better. It only takes 2 minutes!</p>
+  </div>
+
+  <!-- Form Card -->
+  <div class="card" id="feedbackCard">
+    <div class="card-head">
+      <h2 style="font-size:1rem;font-weight:800;color:#fff;margin:0 0 3px"><i class="fas fa-star" style="margin-right:7px;color:#fbbf24"></i>Share Your Experience</h2>
+      <p style="font-size:12.5px;color:rgba(255,255,255,.7);margin:0">Tell us about your visit to FORZA FOOD HUB</p>
+    </div>
+
+    <form id="feedForm" onsubmit="submitFeedback(event)" style="padding:28px">
+
+      <!-- Overall rating -->
+      <div style="text-align:center;margin-bottom:28px;padding-bottom:24px;border-bottom:1px solid #f0f9ff">
+        <p style="font-size:13.5px;font-weight:700;color:#0f172a;margin:0 0 14px">Overall Experience</p>
+        <div class="star-row" id="overallStars">
+          <button type="button" class="star-btn" data-val="1" onclick="setStars('overall',1)">&#9733;</button>
+          <button type="button" class="star-btn" data-val="2" onclick="setStars('overall',2)">&#9733;</button>
+          <button type="button" class="star-btn" data-val="3" onclick="setStars('overall',3)">&#9733;</button>
+          <button type="button" class="star-btn" data-val="4" onclick="setStars('overall',4)">&#9733;</button>
+          <button type="button" class="star-btn" data-val="5" onclick="setStars('overall',5)">&#9733;</button>
+        </div>
+        <p class="star-label" id="overallLabel">Tap to rate</p>
+      </div>
+
+      <!-- Category ratings -->
+      <div style="margin-bottom:24px">
+        <p style="font-size:13.5px;font-weight:700;color:#0f172a;margin:0 0 4px">Rate by Category</p>
+        <p style="font-size:12px;color:#94a3b8;margin:0 0 14px">How was each aspect of your visit?</p>
+        <div id="catRatings">
+          <div class="cat-row">
+            <span class="cat-name"><i class="fas fa-utensils" style="color:#0ea5e9;width:18px;margin-right:8px"></i>Food Quality</span>
+            <div class="mini-stars" data-cat="food">
+              <span class="mini-star" onclick="setCatStar('food',1)">&#9733;</span>
+              <span class="mini-star" onclick="setCatStar('food',2)">&#9733;</span>
+              <span class="mini-star" onclick="setCatStar('food',3)">&#9733;</span>
+              <span class="mini-star" onclick="setCatStar('food',4)">&#9733;</span>
+              <span class="mini-star" onclick="setCatStar('food',5)">&#9733;</span>
+            </div>
+          </div>
+          <div class="cat-row">
+            <span class="cat-name"><i class="fas fa-bolt" style="color:#f59e0b;width:18px;margin-right:8px"></i>Service Speed</span>
+            <div class="mini-stars" data-cat="speed">
+              <span class="mini-star" onclick="setCatStar('speed',1)">&#9733;</span>
+              <span class="mini-star" onclick="setCatStar('speed',2)">&#9733;</span>
+              <span class="mini-star" onclick="setCatStar('speed',3)">&#9733;</span>
+              <span class="mini-star" onclick="setCatStar('speed',4)">&#9733;</span>
+              <span class="mini-star" onclick="setCatStar('speed',5)">&#9733;</span>
+            </div>
+          </div>
+          <div class="cat-row">
+            <span class="cat-name"><i class="fas fa-broom" style="color:#22c55e;width:18px;margin-right:8px"></i>Cleanliness</span>
+            <div class="mini-stars" data-cat="clean">
+              <span class="mini-star" onclick="setCatStar('clean',1)">&#9733;</span>
+              <span class="mini-star" onclick="setCatStar('clean',2)">&#9733;</span>
+              <span class="mini-star" onclick="setCatStar('clean',3)">&#9733;</span>
+              <span class="mini-star" onclick="setCatStar('clean',4)">&#9733;</span>
+              <span class="mini-star" onclick="setCatStar('clean',5)">&#9733;</span>
+            </div>
+          </div>
+          <div class="cat-row">
+            <span class="cat-name"><i class="fas fa-naira-sign" style="color:#7c3aed;width:18px;margin-right:8px"></i>Value for Money</span>
+            <div class="mini-stars" data-cat="value">
+              <span class="mini-star" onclick="setCatStar('value',1)">&#9733;</span>
+              <span class="mini-star" onclick="setCatStar('value',2)">&#9733;</span>
+              <span class="mini-star" onclick="setCatStar('value',3)">&#9733;</span>
+              <span class="mini-star" onclick="setCatStar('value',4)">&#9733;</span>
+              <span class="mini-star" onclick="setCatStar('value',5)">&#9733;</span>
+            </div>
+          </div>
+          <div class="cat-row">
+            <span class="cat-name"><i class="fas fa-smile" style="color:#ec4899;width:18px;margin-right:8px"></i>Staff Friendliness</span>
+            <div class="mini-stars" data-cat="staff">
+              <span class="mini-star" onclick="setCatStar('staff',1)">&#9733;</span>
+              <span class="mini-star" onclick="setCatStar('staff',2)">&#9733;</span>
+              <span class="mini-star" onclick="setCatStar('staff',3)">&#9733;</span>
+              <span class="mini-star" onclick="setCatStar('staff',4)">&#9733;</span>
+              <span class="mini-star" onclick="setCatStar('staff',5)">&#9733;</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Visit details -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+        <div>
+          <label class="form-label">What did you order?</label>
+          <select class="form-input">
+            <option value="">Select a category</option>
+            <option>Breakfast items</option>
+            <option>Lunch / Main meal</option>
+            <option>Snacks</option>
+            <option>Drinks</option>
+            <option>Mixed order</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Visit time</label>
+          <select class="form-input">
+            <option value="">When did you visit?</option>
+            <option>Morning (7 AM – 10 AM)</option>
+            <option>Late morning (10 AM – 12 PM)</option>
+            <option>Lunch (12 PM – 2 PM)</option>
+            <option>Afternoon (2 PM – 5 PM)</option>
+            <option>Evening (5 PM – 8 PM)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Tags -->
+      <div style="margin-bottom:22px">
+        <label class="form-label">What went well? (select all that apply)</label>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px" id="tagContainer">
+          <span class="tag-chip" onclick="toggleTag(this)">Great taste</span>
+          <span class="tag-chip" onclick="toggleTag(this)">Fast service</span>
+          <span class="tag-chip" onclick="toggleTag(this)">Good portions</span>
+          <span class="tag-chip" onclick="toggleTag(this)">Clean environment</span>
+          <span class="tag-chip" onclick="toggleTag(this)">Friendly staff</span>
+          <span class="tag-chip" onclick="toggleTag(this)">Affordable prices</span>
+          <span class="tag-chip" onclick="toggleTag(this)">Fresh food</span>
+          <span class="tag-chip" onclick="toggleTag(this)">Easy ordering</span>
+        </div>
+      </div>
+
+      <!-- Comment -->
+      <div style="margin-bottom:22px">
+        <label class="form-label">Your Comments</label>
+        <textarea class="form-input" placeholder="Tell us more — what did you love, or what can we improve? Every word helps us do better!" maxlength="500" oninput="updateCount(this)"></textarea>
+        <p style="font-size:11.5px;color:#94a3b8;text-align:right;margin:4px 0 0" id="charCount">0 / 500</p>
+      </div>
+
+      <!-- Name (optional) -->
+      <div style="margin-bottom:22px">
+        <label class="form-label">Your Name <span style="font-weight:400;color:#94a3b8">(optional — leave blank to stay anonymous)</span></label>
+        <input class="form-input" type="text" placeholder="e.g. Adebayo O." />
+      </div>
+
+      <!-- Would recommend -->
+      <div style="background:#f0f9ff;border-radius:12px;padding:16px;border:1px solid #bae6fd;margin-bottom:24px">
+        <p style="font-size:13.5px;font-weight:700;color:#0f172a;margin:0 0 12px">Would you recommend FORZA to a friend?</p>
+        <div style="display:flex;gap:10px">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13.5px;font-weight:600;color:#0f172a">
+            <input type="radio" name="recommend" value="yes" style="accent-color:#0ea5e9;width:16px;height:16px" />
+            <i class="fas fa-thumbs-up" style="color:#22c55e"></i> Definitely yes!
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13.5px;font-weight:600;color:#0f172a">
+            <input type="radio" name="recommend" value="maybe" style="accent-color:#0ea5e9;width:16px;height:16px" />
+            <i class="fas fa-meh" style="color:#f59e0b"></i> Maybe
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13.5px;font-weight:600;color:#0f172a">
+            <input type="radio" name="recommend" value="no" style="accent-color:#0ea5e9;width:16px;height:16px" />
+            <i class="fas fa-thumbs-down" style="color:#ef4444"></i> Not right now
+          </label>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;align-items:center">
+        <button type="submit" class="btn-sky"><i class="fas fa-paper-plane" style="margin-right:8px"></i>Submit Feedback</button>
+        <button type="reset" class="btn-outline">Clear</button>
+      </div>
+    </form>
+
+    <!-- Success state -->
+    <div class="success-state" id="successState">
+      <div class="success-icon">🎉</div>
+      <h2 style="font-size:1.4rem;font-weight:900;color:#0f172a;margin:0 0 8px">Thank You!</h2>
+      <p style="font-size:13.5px;color:#64748b;margin:0 0 6px">Your feedback has been submitted successfully.</p>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+        <a href="index.html#menu" style="background:linear-gradient(135deg,#0284c7,#0ea5e9);color:#fff;border-radius:10px;padding:11px 22px;font-size:13.5px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:7px"><i class="fas fa-utensils"></i> Order Again</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Feedback -->
+  <div style="margin-top:32px">
+    <h2 style="font-size:16px;font-weight:800;color:#0f172a;margin:0 0 16px">What Other Students Are Saying</h2>
+    <div class="review-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#0284c7,#0ea5e9);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">TK</div>
+          <div>
+            <p style="font-size:13px;font-weight:700;color:#0f172a;margin:0">Toluwani K.</p>
+            <p style="font-size:11.5px;color:#94a3b8;margin:0">2 days ago</p>
+          </div>
+        </div>
+        <span style="color:#f59e0b;font-size:.85rem">★★★★★</span>
+      </div>
+      <p style="font-size:13px;color:#475569;line-height:1.65;margin:0">"The Jollof Rice here is unmatched! Fast service and the staff are always smiling. My go-to lunch spot on campus."</p>
+    </div>
+    <div class="review-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">FK</div>
+          <div>
+            <p style="font-size:13px;font-weight:700;color:#0f172a;margin:0">Fatima K.</p>
+            <p style="font-size:11.5px;color:#94a3b8;margin:0">5 days ago</p>
+          </div>
+        </div>
+        <span style="color:#f59e0b;font-size:.85rem">★★★★☆</span>
+      </div>
+      <p style="font-size:13px;color:#475569;line-height:1.65;margin:0">"Meal plan is a great deal! Saved so much this semester. Would love to see more drink variety though."</p>
+    </div>
+  </div>
+</div>
+
+<footer class="pg-footer">
+  <p>&copy; 2026 FORZA FOOD HUB · <a href="index.html">Back to Main Site</a> · <a href="faqs.html">FAQs</a></p>
+</footer>
+
+<script>
+  const starLabels = ['', 'Poor 😞', 'Fair 😐', 'Good 😊', 'Great 😄', 'Excellent! 🤩'];
+  let overallVal = 0;
+
+  function setStars(group, val) {
+    overallVal = val;
+    const stars = document.querySelectorAll('#overallStars .star-btn');
+    stars.forEach((s, i) => s.classList.toggle('lit', i < val));
+    document.getElementById('overallLabel').textContent = starLabels[val];
+  }
+
+  function setCatStar(cat, val) {
+    const row = document.querySelector(`.mini-stars[data-cat="${cat}"]`);
+    row.querySelectorAll('.mini-star').forEach((s, i) => s.classList.toggle('lit', i < val));
+  }
+
+  function toggleTag(el) { el.classList.toggle('selected'); }
+
+  function updateCount(el) {
+    document.getElementById('charCount').textContent = `${el.value.length} / 500`;
+  }
+
+  function submitFeedback(e) {
+    e.preventDefault();
+    if (!overallVal) { toast('Please give an overall star rating first!'); return; }
+    document.getElementById('feedbackCard').querySelector('form').style.display = 'none';
+    document.getElementById('successState').style.display = 'block';
+    toast('Feedback submitted successfully!');
+  }
+
+  let toastTimer;
+  function toast(msg) {
+    const t = document.getElementById('toast');
+    document.getElementById('toastMsg').textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 3200);
+  }
+</script>
+</body>
+</html>

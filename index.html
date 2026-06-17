@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FORZA FOOD HUB — School Cafeteria</title>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+
+  <!-- Tailwind CSS Play CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+  <!-- Google Fonts: Poppins -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+  <script>
+    tailwind.config = {
+      theme: { extend: { fontFamily: { sans: ['Poppins', 'sans-serif'] } } }
+    }
+  </script>
+
+  <style>
+    /* ── Base ─────────────────────────────────────────────── */
+    html { scroll-behavior: smooth; }
+    * { box-sizing: border-box; }
+    body { font-family: 'Poppins', sans-serif; }
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-thumb { background: #0ea5e9; border-radius: 4px; }
+
+    /* ── Keyframes ───────────────────────────────────────── */
+    @keyframes floatUp   { 0%,100%{transform:translateY(0)}   50%{transform:translateY(-10px)} }
+    @keyframes pulseRing { to{transform:scale(2.2);opacity:0} }
+    @keyframes toastIn   { from{opacity:0;transform:translateX(90px)} to{opacity:1;transform:translateX(0)} }
+    @keyframes modalPop  { from{transform:scale(.75);opacity:0} to{transform:scale(1);opacity:1} }
+    @keyframes bump      { 0%,100%{transform:scale(1)} 50%{transform:scale(1.3)} }
+    @keyframes revealUp  { from{opacity:0;transform:translateY(26px)} to{opacity:1;transform:translateY(0)} }
+
+    /* ── Hero ────────────────────────────────────────────── */
+    .hero-bg {
+      background: linear-gradient(135deg,#075985 0%,#0369a1 35%,#0284c7 70%,#0ea5e9 100%);
+      position: relative; overflow: hidden;
+    }
+    .hero-bg::before {
+      content:''; position:absolute; top:-40%; right:-5%;
+      width:520px; height:520px; border-radius:50%;
+      background:rgba(255,255,255,.04);
+    }
+    .hero-bg::after {
+      content:''; position:absolute; bottom:-30%; left:-5%;
+      width:380px; height:380px; border-radius:50%;
+      background:rgba(255,255,255,.03);
+    }
+    .brand-gradient {
+      background: linear-gradient(90deg,#fff,#bae6fd,#7dd3fc);
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+      background-clip:text;
+    }
+    .pulse-dot {
+      display:inline-block; width:9px; height:9px;
+      background:#4ade80; border-radius:50%; position:relative;
+    }
+    .pulse-dot::after {
+      content:''; position:absolute; inset:0; border-radius:50%;
+      background:#4ade80; animation:pulseRing 1.6s ease-out infinite;
+    }
+    .hero-ring {
+      width:370px; height:370px; border-radius:50%; overflow:hidden;
+      border:8px solid rgba(255,255,255,.22);
+      box-shadow:0 0 0 16px rgba(255,255,255,.07),0 30px 80px rgba(0,0,0,.3);
+      position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    }
+    .hero-ring img { width:100%; height:100%; object-fit:cover; }
+    .chip {
+      position:absolute; background:#fff; border-radius:50px;
+      padding:10px 15px; display:flex; align-items:center; gap:9px;
+      box-shadow:0 8px 24px rgba(0,0,0,.14); min-width:148px; z-index:10;
+    }
+    .chip-icon {
+      width:34px; height:34px; border-radius:50%;
+      background:#e0f2fe; color:#0ea5e9;
+      display:flex; align-items:center; justify-content:center; font-size:12px;
+    }
+    .chip small  { display:block; font-size:10px; color:#94a3b8; line-height:1; }
+    .chip strong { display:block; font-size:13px; color:#0f172a; font-weight:700; }
+    .hero-wave { position:absolute; bottom:-2px; left:0; right:0; line-height:0; z-index:2; }
+    .social-bar {
+      position:absolute; left:18px; bottom:88px;
+      display:flex; flex-direction:column; gap:9px; z-index:5;
+    }
+    .social-bar a {
+      width:33px; height:33px; border-radius:50%;
+      background:rgba(255,255,255,.16); color:#fff;
+      display:flex; align-items:center; justify-content:center;
+      font-size:12px; text-decoration:none; transition:background .2s;
+    }
+    .social-bar a:hover { background:rgba(255,255,255,.3); }
+
+    /* ── Header ──────────────────────────────────────────── */
+    #hdr {
+      position:fixed; top:0; left:0; right:0; z-index:900;
+      transition:background .3s,box-shadow .3s;
+    }
+    #hdr.scrolled { background:#fff; box-shadow:0 4px 22px rgba(14,165,233,.11); }
+    .h-nav {
+      max-width:1200px; margin:0 auto; padding:0 22px;
+      height:68px; display:flex; align-items:center; justify-content:space-between;
+    }
+    .logo-a { display:flex; align-items:center; gap:9px; text-decoration:none; }
+    .logo-plate {
+      width:37px; height:37px; border-radius:10px;
+      background:rgba(255,255,255,.9); color:#0ea5e9;
+      display:flex; align-items:center; justify-content:center; font-size:.95rem;
+      box-shadow:0 2px 10px rgba(0,0,0,.1);
+    }
+    #hdr.scrolled .logo-plate { background:#0ea5e9; color:#fff; }
+    .logo-txt { font-size:1.35rem; font-weight:900; color:#fff; letter-spacing:1px; }
+    #hdr.scrolled .logo-txt { color:#0f172a; }
+    .nav-ul { display:flex; align-items:center; gap:3px; list-style:none; margin:0; padding:0; }
+    .nlink {
+      padding:7px 13px; border-radius:8px; color:rgba(255,255,255,.82);
+      font-size:13.5px; font-weight:500; text-decoration:none; transition:all .2s;
+    }
+    .nlink:hover { color:#fff; background:rgba(255,255,255,.12); }
+    #hdr.scrolled .nlink { color:#475569; }
+    #hdr.scrolled .nlink:hover { color:#0ea5e9; background:#f0f9ff; }
+    .cart-trg {
+      position:relative; width:40px; height:40px; border-radius:50%;
+      border:2px solid rgba(255,255,255,.33); background:transparent;
+      color:#fff; cursor:pointer; display:flex; align-items:center;
+      justify-content:center; font-size:14px; transition:all .2s;
+    }
+    .cart-trg:hover { background:rgba(255,255,255,.16); }
+    #hdr.scrolled .cart-trg { border-color:#e0f2fe; color:#0ea5e9; background:#f0f9ff; }
+    #hdr.scrolled .cart-trg:hover { background:#e0f2fe; }
+    .c-badge {
+      position:absolute; top:-5px; right:-5px;
+      background:#ef4444; color:#fff;
+      font-size:10px; font-weight:700;
+      width:17px; height:17px; border-radius:50%;
+      display:flex; align-items:center; justify-content:center;
+    }
+    .c-badge.bump { animation:bump .3s ease; }
+    .btn-now {
+      background:#fff; color:#0ea5e9;
+      padding:9px 22px; border-radius:30px;
+      font-size:13.5px; font-weight:600;
+      text-decoration:none;
+      box-shadow:0 3px 12px rgba(0,0,0,.12);
+      transition:all .2s;
+    }
+    .btn-now:hover { background:#f0f9ff; transform:translateY(-1px); }
+    #hdr.scrolled .btn-now { background:#0ea5e9; color:#fff; }
+    #hdr.scrolled .btn-now:hover { background:#0284c7; }
+    .hbg { display:none; flex-direction:column; gap:5px; cursor:pointer; background:none; border:none; padding:7px; }
+    .hbg span { display:block; width:22px; height:2px; background:#fff; border-radius:2px; transition:all .3s; }
+    #hdr.scrolled .hbg span { background:#0f172a; }
+    .mob-menu {
+      display:none; position:fixed; top:68px; left:0; right:0;
+      background:#fff; padding:12px 18px 16px;
+      z-index:899; box-shadow:0 8px 30px rgba(0,0,0,.09);
+      flex-direction:column; gap:2px;
+    }
+    .mob-menu.open { display:flex; }
+    .mob-menu .nlink { color:#475569; display:block; padding:12px 13px; }
+    .mob-menu .nlink:hover { background:#f0f9ff; color:#0ea5e9; }
+
+    /* ── Common Buttons ─────────────────────────────────── */
+    .btn-sky {
+      display:inline-flex; align-items:center; gap:8px;
+      background:#0ea5e9; color:#fff;
+      padding:12px 26px; border-radius:30px;
+      font-weight:600; font-size:14px;
+      text-decoration:none; border:none; cursor:pointer;
+      font-family:'Poppins',sans-serif;
+      box-shadow:0 5px 18px rgba(14,165,233,.38);
+      transition:all .2s;
+    }
+    .btn-sky:hover { background:#0284c7; transform:translateY(-2px); box-shadow:0 10px 26px rgba(14,165,233,.48); }
+    .btn-ghost {
+      display:inline-flex; align-items:center; gap:8px;
+      background:transparent; color:#fff;
+      padding:12px 26px; border-radius:30px;
+      font-weight:600; font-size:14px;
+      border:2px solid rgba(255,255,255,.42); text-decoration:none; transition:all .2s;
+    }
+    .btn-ghost:hover { background:rgba(255,255,255,.12); border-color:#fff; }
+
+    /* ── Stat divider ────────────────────────────────────── */
+    .st-div { width:1px; height:36px; background:rgba(255,255,255,.24); }
+
+    /* ── Section helpers ────────────────────────────────── */
+    .ctr { max-width:1200px; margin:0 auto; padding:0 22px; }
+    .sec-tag { font-size:11.5px; color:#0ea5e9; font-weight:700; text-transform:uppercase; letter-spacing:1.6px; }
+    .sec-h { font-size:2rem; font-weight:800; color:#0f172a; margin:5px 0 12px; }
+    .sec-h span { color:#0ea5e9; }
+    .dots-row { display:flex; gap:5px; justify-content:center; margin-top:10px; }
+    .dot { width:7px; height:7px; border-radius:50%; background:#bae6fd; }
+    .dot.on { background:#0ea5e9; width:22px; border-radius:4px; }
+
+    /* ── Feature cards ──────────────────────────────────── */
+    .fc {
+      background:#fff; border-radius:16px; padding:24px 19px;
+      border:1px solid #e0f2fe; transition:all .3s; cursor:default;
+    }
+    .fc:hover { transform:translateY(-6px); box-shadow:0 18px 40px rgba(14,165,233,.13); border-color:#0ea5e9; }
+    .fc-em { font-size:1.85rem; margin-bottom:9px; display:block; }
+    .fc-sub { font-size:11px; color:#0ea5e9; font-weight:700; letter-spacing:.7px; text-transform:uppercase; margin-bottom:3px; }
+
+    /* ── Special cards ──────────────────────────────────── */
+    .spc {
+      background:#fff; border-radius:20px; overflow:hidden;
+      box-shadow:0 4px 20px rgba(0,0,0,.08); transition:transform .3s,box-shadow .3s;
+    }
+    .spc:hover { transform:translateY(-8px); box-shadow:0 20px 50px rgba(14,165,233,.18); }
+    .spc-img { position:relative; height:220px; overflow:hidden; }
+    .spc-img img { width:100%; height:100%; object-fit:cover; transition:transform .4s; }
+    .spc:hover .spc-img img { transform:scale(1.07); }
+    .bdg-sale { position:absolute;top:12px;left:12px;background:#ef4444;color:#fff;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700; }
+    .bdg-new  { position:absolute;top:12px;left:12px;background:#0ea5e9;color:#fff;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700; }
+    .like-btn {
+      width:33px; height:33px; border-radius:50%;
+      border:1px solid #e0f2fe; background:#fff; color:#cbd5e1;
+      display:flex; align-items:center; justify-content:center;
+      cursor:pointer; transition:all .2s; font-size:12px;
+    }
+    .like-btn:hover, .like-btn.liked { color:#ef4444; border-color:#fecaca; background:#fff5f5; }
+    .atc {
+      background:#0ea5e9; color:#fff; border:none;
+      padding:8px 17px; border-radius:25px;
+      font-size:13px; font-weight:600; cursor:pointer;
+      display:flex; align-items:center; gap:6px;
+      font-family:'Poppins',sans-serif; transition:all .2s;
+    }
+    .atc:hover { background:#0284c7; transform:scale(1.03); }
+    .atc:active { transform:scale(.97); }
+
+    /* ── Menu tabs / search ─────────────────────────────── */
+    .tab {
+      padding:8px 19px; border-radius:30px;
+      border:2px solid #e0f2fe; background:#fff;
+      color:#64748b; font-size:13.5px; font-weight:500;
+      cursor:pointer; transition:all .2s; font-family:'Poppins',sans-serif;
+    }
+    .tab:hover { border-color:#0ea5e9; color:#0ea5e9; }
+    .tab.on { background:#0ea5e9; border-color:#0ea5e9; color:#fff; }
+    .srch { position:relative; }
+    .srch i { position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:13px; }
+    .srch input {
+      width:100%; padding:11px 14px 11px 38px;
+      border:2px solid #e0f2fe; border-radius:30px;
+      outline:none; font-family:'Poppins',sans-serif; font-size:13.5px;
+      transition:border-color .2s;
+    }
+    .srch input:focus { border-color:#0ea5e9; }
+
+    /* ── Menu cards (JS-generated) ──────────────────────── */
+    .mc { background:#fff;border-radius:15px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.07);border:1px solid #f0f9ff;transition:all .3s; }
+    .mc:hover { transform:translateY(-5px);box-shadow:0 15px 35px rgba(14,165,233,.13); }
+    .mc-img { width:100%;height:160px;object-fit:cover;transition:transform .4s; display:block; }
+    .mc:hover .mc-img { transform:scale(1.07); }
+    .mc-bd { padding:14px; }
+    .mc-nm { font-size:14px;font-weight:700;color:#1e293b;margin:4px 0 3px; }
+    .mc-ds { font-size:12px;color:#64748b;line-height:1.55;margin-bottom:5px; }
+    .mc-cal { font-size:11px;color:#94a3b8;margin-bottom:10px; }
+    .mc-ft { display:flex;align-items:center;justify-content:space-between; }
+    .mc-pr { font-size:1.05rem;font-weight:800;color:#0ea5e9; }
+    .itag { display:inline-block;font-size:10px;padding:2px 9px;border-radius:20px;font-weight:700;text-transform:uppercase;margin:0 3px 3px 0; }
+    .tp { background:#fef3c7;color:#92400e; }
+    .tv { background:#dcfce7;color:#166534; }
+    .tn { background:#e0f2fe;color:#0c4a6e; }
+    .ts { background:#fee2e2;color:#991b1b; }
+    .no-it { grid-column:1/-1;text-align:center;padding:60px 20px;color:#94a3b8; }
+    .no-it i { font-size:2.8rem;color:#cbd5e1;display:block;margin-bottom:10px; }
+
+    /* ── About ──────────────────────────────────────────── */
+    .ab-img { width:100%;height:430px;object-fit:cover;border-radius:22px; }
+    .ab-badge {
+      position:absolute;bottom:-16px;right:-16px;
+      background:#0ea5e9;color:#fff;
+      border-radius:14px;padding:16px 20px;text-align:center;
+      box-shadow:0 12px 30px rgba(14,165,233,.38);
+    }
+    .ab-badge strong { font-size:2rem;font-weight:900;display:block;line-height:1; }
+    .ab-badge span { font-size:11px;opacity:.88; }
+    .chk { display:flex;align-items:center;gap:9px;padding:6px 0;font-size:13.5px;color:#334155; }
+    .chk i { color:#0ea5e9;font-size:14px; }
+
+    /* ── Testimonial cards ──────────────────────────────── */
+    .tc {
+      background:#fff;border-radius:19px;padding:25px;
+      box-shadow:0 4px 20px rgba(0,0,0,.07);
+      border:1px solid #e0f2fe;transition:all .3s;
+    }
+    .tc:hover { transform:translateY(-5px);box-shadow:0 14px 38px rgba(14,165,233,.13); }
+    .av { width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px;flex-shrink:0; }
+
+    /* ── Plan cards ─────────────────────────────────────── */
+    .pc {
+      background:#fff;border-radius:22px;padding:28px;
+      border:2px solid #e0f2fe;position:relative;transition:all .3s;
+    }
+    .pc:hover { transform:translateY(-5px);box-shadow:0 18px 45px rgba(14,165,233,.13); }
+    .pc-feat {
+      background:linear-gradient(135deg,#0369a1,#0ea5e9);
+      border-color:transparent;transform:scale(1.03);
+    }
+    .pc-feat:hover { transform:scale(1.03) translateY(-5px); }
+    .pop-tag {
+      position:absolute;top:-12px;left:50%;transform:translateX(-50%);
+      background:#f59e0b;color:#fff;
+      font-size:11px;font-weight:700;padding:3px 15px;border-radius:20px;white-space:nowrap;
+    }
+    .pl-li { display:flex;align-items:center;gap:8px;padding:7px 0;font-size:13.5px;border-bottom:1px solid rgba(0,0,0,.04); }
+    .pc-feat .pl-li { border-bottom-color:rgba(255,255,255,.1);color:rgba(255,255,255,.88); }
+    .p-btn {
+      width:100%;padding:11px;margin-top:10px;
+      border-radius:30px;border:2px solid #0ea5e9;
+      background:transparent;color:#0ea5e9;
+      font-size:13.5px;font-weight:600;cursor:pointer;
+      font-family:'Poppins',sans-serif;transition:all .2s;
+    }
+    .p-btn:hover { background:#0ea5e9;color:#fff; }
+    .pc-feat .p-btn { border-color:#fff;color:#fff; }
+    .pc-feat .p-btn:hover { background:#fff;color:#0369a1; }
+
+    /* ── Cart sidebar ───────────────────────────────────── */
+    .cart-sd {
+      position:fixed;top:0;right:0;
+      width:375px;max-width:100vw;height:100vh;
+      background:#fff;z-index:1000;
+      display:flex;flex-direction:column;
+      box-shadow:-8px 0 40px rgba(0,0,0,.12);
+      transform:translateX(100%);
+      transition:transform .35s cubic-bezier(.4,0,.2,1);
+    }
+    .cart-sd.open { transform:translateX(0); }
+    .cart-ov {
+      position:fixed;inset:0;background:rgba(0,0,0,.44);
+      z-index:999;opacity:0;pointer-events:none;
+      transition:opacity .35s;backdrop-filter:blur(3px);
+    }
+    .cart-ov.open { opacity:1;pointer-events:all; }
+    .cart-hdr {
+      padding:17px 20px;border-bottom:1px solid #e0f2fe;
+      display:flex;align-items:center;justify-content:space-between;
+    }
+    .ct-row { display:flex;align-items:center;gap:8px; }
+    .ct-chip { background:#0ea5e9;color:#fff;width:20px;height:20px;border-radius:50%;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center; }
+    .x-btn { width:33px;height:33px;border-radius:50%;border:1px solid #e0f2fe;background:#fff;color:#64748b;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;font-size:13px; }
+    .x-btn:hover { background:#fee2e2;color:#ef4444;border-color:#fecaca; }
+    .cart-body { flex:1;overflow-y:auto;padding:13px 16px; }
+    .empty-cart { display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#94a3b8;text-align:center;gap:9px; }
+    .empty-cart i { font-size:2.7rem;color:#cbd5e1; }
+
+    /* Cart items (JS) */
+    .ci { display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid #f0f9ff; }
+    .ci img { width:56px;height:56px;border-radius:11px;object-fit:cover;flex-shrink:0; }
+    .ci-inf { flex:1;min-width:0; }
+    .ci-nm { font-size:13px;font-weight:600;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+    .ci-pr { font-size:12px;color:#0ea5e9;font-weight:600;margin-top:2px; }
+    .qi { display:flex;align-items:center;gap:6px; }
+    .qb { width:23px;height:23px;border-radius:50%;border:1px solid #e0f2fe;background:#fff;color:#0ea5e9;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;line-height:1; }
+    .qb:hover { background:#0ea5e9;color:#fff;border-color:#0ea5e9; }
+    .qn { font-size:13px;font-weight:700;color:#1e293b;min-width:16px;text-align:center; }
+    .di { color:#cbd5e1;cursor:pointer;padding:4px;background:none;border:none;font-size:12px;transition:color .2s; }
+    .di:hover { color:#ef4444; }
+    .cart-ftr { padding:17px 20px;border-top:1px solid #e0f2fe;background:#f8fafc; }
+    .sr { display:flex;justify-content:space-between;font-size:13.5px;padding:4px 0;color:#64748b; }
+    .sr.tot { font-size:15px;font-weight:700;color:#0f172a;padding-top:10px;border-top:1px solid #e0f2fe;margin-top:5px; }
+    .sr.disc { color:#22c55e; }
+    .co-btn { width:100%;padding:12px;background:#0ea5e9;color:#fff;border:none;border-radius:30px;font-size:14px;font-weight:600;cursor:pointer;margin-top:12px;display:flex;align-items:center;justify-content:center;gap:7px;font-family:'Poppins',sans-serif;transition:all .2s; }
+    .co-btn:hover { background:#0284c7;box-shadow:0 8px 20px rgba(14,165,233,.38); }
+    .cl-btn { width:100%;padding:8px;background:transparent;color:#94a3b8;border:1px solid #e0f2fe;border-radius:30px;font-size:12.5px;cursor:pointer;margin-top:7px;font-family:'Poppins',sans-serif;transition:all .2s; }
+    .cl-btn:hover { color:#ef4444;border-color:#fecaca;background:#fff5f5; }
+
+    /* ── Toast ──────────────────────────────────────────── */
+    #toast {
+      position:fixed;bottom:26px;right:20px;
+      background:#0f172a;color:#fff;
+      padding:12px 17px;border-radius:12px;
+      font-size:13px;font-weight:500;z-index:2000;
+      display:flex;align-items:center;gap:8px;
+      box-shadow:0 10px 30px rgba(0,0,0,.2);
+      transform:translateX(110px);opacity:0;
+      transition:all .3s cubic-bezier(.34,1.56,.64,1);
+      pointer-events:none;max-width:290px;
+    }
+    #toast.show { transform:translateX(0);opacity:1; }
+
+    /* ── Modal ──────────────────────────────────────────── */
+    .m-bg {
+      position:fixed;inset:0;background:rgba(0,0,0,.52);
+      z-index:1500;display:flex;align-items:center;justify-content:center;
+      opacity:0;pointer-events:none;
+      transition:opacity .3s;backdrop-filter:blur(5px);
+    }
+    .m-bg.open { opacity:1;pointer-events:all; }
+    .m-box {
+      background:#fff;border-radius:22px;padding:36px 28px;
+      max-width:370px;width:90%;text-align:center;
+      box-shadow:0 25px 60px rgba(0,0,0,.18);
+      transform:scale(.76);
+      transition:transform .35s cubic-bezier(.34,1.56,.64,1);
+    }
+    .m-bg.open .m-box { transform:scale(1); }
+    .m-ico { width:68px;height:68px;border-radius:50%;background:#dcfce7;color:#22c55e;font-size:1.85rem;display:flex;align-items:center;justify-content:center;margin:0 auto 16px; }
+    .o-ref { background:#f0f9ff;border:1px solid #e0f2fe;color:#0369a1;padding:9px 17px;border-radius:9px;font-size:13.5px;font-weight:600;margin:12px 0 18px; }
+    .m-ok { width:100%;padding:12px;background:#0ea5e9;color:#fff;border:none;border-radius:30px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Poppins',sans-serif;transition:all .2s; }
+    .m-ok:hover { background:#0284c7; }
+
+    /* ── Nutrition badge ────────────────────────────────── */
+    .nb { display:inline-flex;align-items:center;gap:6px;background:#e0f2fe;color:#0369a1;padding:5px 13px;border-radius:20px;font-size:12.5px;font-weight:500;margin:3px; }
+
+    /* ── Footer links ───────────────────────────────────── */
+    .fl { color:#94a3b8;font-size:13.5px;text-decoration:none;transition:color .2s;display:block;padding:3px 0; }
+    .fl:hover { color:#38bdf8; }
+    .sa { width:33px;height:33px;border-radius:50%;background:rgba(255,255,255,.07);color:#94a3b8;display:flex;align-items:center;justify-content:center;font-size:12px;transition:all .2s;text-decoration:none; }
+    .sa:hover { background:#0ea5e9;color:#fff; }
+    .fci { display:flex;align-items:flex-start;gap:9px;margin-bottom:10px;font-size:13px;color:#94a3b8; }
+    .fci i { color:#0ea5e9;margin-top:2px;flex-shrink:0; }
+
+    /* ── Scroll reveal ──────────────────────────────────── */
+    .rv { opacity:0;transform:translateY(24px);transition:opacity .65s ease,transform .65s ease; }
+    .rv.vis { opacity:1;transform:translateY(0); }
+
+    /* ── Responsive ─────────────────────────────────────── */
+    @media(max-width:1024px){
+      .hero-ring{width:300px;height:300px;}
+    }
+    @media(max-width:768px){
+      .nav-ul,.btn-now{display:none;}
+      .hbg{display:flex;}
+      .hero-inner{flex-direction:column!important;text-align:center;padding-top:88px!important;padding-bottom:70px!important;}
+      .hero-side{display:flex;flex-direction:column;align-items:center;}
+      .hero-h1{font-size:2.1rem!important;}
+      .hero-ring{width:240px;height:240px;}
+      .chip,.social-bar{display:none;}
+      .f4g{grid-template-columns:repeat(2,1fr)!important;}
+      .s3g{grid-template-columns:1fr!important;max-width:400px;margin:0 auto;}
+      .m4g{grid-template-columns:repeat(2,1fr)!important;}
+      .ab-flex{flex-direction:column!important;}
+      .t3g{grid-template-columns:1fr!important;}
+      .p3g{grid-template-columns:1fr!important;}
+      .pc-feat{transform:scale(1)!important;}
+      .n2f{flex-direction:column!important;}
+      .ft4{grid-template-columns:1fr 1fr!important;}
+      .ft-bot{flex-direction:column;text-align:center;}
+    }
+    @media(max-width:480px){
+      .m4g,.f4g{grid-template-columns:1fr!important;}
+      .hero-h1{font-size:1.75rem!important;}
+    }
+  </style>
+</head>
+<body class="bg-white text-slate-800">
+
+  <!-- ── Toast ────────────────────────────────────────────── -->
+  <div id="toast">
+    <i class="fas fa-check-circle" style="color:#4ade80"></i>
+    <span id="t-msg">Added to cart!</span>
+  </div>
+
+  <!-- ── Cart overlay ──────────────────────────────────────── -->
+  <div class="cart-ov" id="cartOv"></div>
+
+  <!-- ── Cart sidebar ─────────────────────────────────────── -->
+  <aside class="cart-sd" id="cartSd">
+    <div class="cart-hdr">
+      <div class="ct-row">
+        <i class="fas fa-shopping-cart text-sky-500"></i>
+        <h3 class="font-bold text-slate-900" style="font-size:15px">My Cart</h3>
+        <div class="ct-chip" id="ctChip">0</div>
+      </div>
+      <button class="x-btn" id="closeCart"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="cart-body" id="cartBody">
+      <div class="empty-cart" id="emptyCart">
+        <i class="fas fa-shopping-bag"></i>
+        <p class="font-semibold text-slate-500" style="font-size:15px">Your cart is empty</p>
+        <small style="font-size:12.5px">Add items from the menu to get started!</small>
+      </div>
+    </div>
+    <div class="cart-ftr" id="cartFtr" style="display:none">
+      <div class="sr"><span>Subtotal</span><span id="subT">₦0</span></div>
+      <div class="sr disc" id="discRow" style="display:none"><span>Student Discount (10%)</span><span id="discT">-₦0</span></div>
+      <div class="sr tot"><span>Total</span><span id="totT">₦0</span></div>
+      <button class="co-btn" id="coBtn"><i class="fas fa-lock"></i> Checkout</button>
+      <button class="cl-btn" id="clBtn">Clear Cart</button>
+    </div>
+  </aside>
+
+  <!-- ── Order modal ──────────────────────────────────────── -->
+  <div class="m-bg" id="oModal">
+    <div class="m-box">
+      <div class="m-ico"><i class="fas fa-check"></i></div>
+      <h2 class="text-2xl font-extrabold text-slate-900 mb-2">Order Placed!</h2>
+      <p class="text-slate-500" style="font-size:13.5px">Your order is being prepared. Pick up at <strong class="text-slate-700">Counter 3</strong> in approximately <strong class="text-sky-600">15 minutes</strong>.</p>
+      <div class="o-ref">Order Ref: <span id="oRef">#FZH-0000</span></div>
+      <button class="m-ok" id="mOk">Got it, Thanks!</button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════
+       HEADER
+  ════════════════════════════════════════════════════════ -->
+  <header id="hdr">
+    <nav class="h-nav">
+      <a href="#home" class="logo-a">
+        <div class="logo-plate"><i class="fas fa-utensils"></i></div>
+        <span class="logo-txt">FORZA</span>
+      </a>
+      <ul class="nav-ul">
+        <li><a href="#menu"       class="nlink">Menu</a></li>
+        <li><a href="#specials"   class="nlink">Specials</a></li>
+        <li><a href="#nutrition"  class="nlink">Nutrition</a></li>
+        <li><a href="#meal-plans" class="nlink">Meal Plans</a></li>
+        <li><a href="#about"      class="nlink">About</a></li>
+      </ul>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="cart-trg" id="openCart">
+          <i class="fas fa-shopping-cart"></i>
+          <span class="c-badge" id="navBdg">0</span>
+        </button>
+        <a href="#menu" class="btn-now">Order Now</a>
+        <button class="hbg" id="hbg"><span></span><span></span><span></span></button>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Mobile menu -->
+  <div class="mob-menu" id="mobMenu">
+    <a href="#menu"       class="nlink">Menu</a>
+    <a href="#specials"   class="nlink">Specials</a>
+    <a href="#nutrition"  class="nlink">Nutrition</a>
+    <a href="#meal-plans" class="nlink">Meal Plans</a>
+    <a href="#about"      class="nlink">About</a>
+    <a href="#menu" class="btn-sky" style="margin-top:8px;justify-content:center">Order Now</a>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════
+       HERO
+  ════════════════════════════════════════════════════════ -->
+  <section class="hero-bg" id="home">
+    <div class="ctr hero-inner" style="display:flex;align-items:center;justify-content:space-between;gap:40px;padding-top:108px;padding-bottom:100px;position:relative;z-index:3">
+
+      <!-- Text side -->
+      <div class="hero-side" style="flex:1;max-width:560px">
+        <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.11);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.18);border-radius:30px;padding:7px 15px;font-size:12.5px;color:rgba(255,255,255,.88);font-weight:500;margin-bottom:18px">
+          <span class="pulse-dot"></span> Your School's Favourite Spot
+        </div>
+        <h1 class="hero-h1" style="font-size:3rem;font-weight:900;line-height:1.1;color:#fff;margin-bottom:14px">
+          Welcome to<br><span class="brand-gradient">FORZA FOOD HUB</span>
+        </h1>
+        <p style="color:rgba(255,255,255,.76);font-size:14.5px;line-height:1.72;margin-bottom:26px;max-width:450px">
+          Fresh, nutritious &amp; delicious meals crafted just for students. Order ahead, skip the queue, and fuel your school day with the best cafeteria experience on campus!
+        </p>
+        <div style="display:flex;align-items:center;flex-wrap:wrap;gap:11px;margin-bottom:34px">
+          <a href="#menu" class="btn-sky">Order Now <i class="fas fa-arrow-right"></i></a>
+          <a href="#specials" class="btn-ghost">Today's Specials</a>
+        </div>
+        <div style="display:flex;align-items:center;gap:20px">
+          <div style="text-align:center">
+            <p style="font-size:1.55rem;font-weight:900;color:#fff;line-height:1">500+</p>
+            <p style="font-size:11.5px;color:rgba(255,255,255,.62)">Daily Orders</p>
+          </div>
+          <div class="st-div"></div>
+          <div style="text-align:center">
+            <p style="font-size:1.55rem;font-weight:900;color:#fff;line-height:1">50+</p>
+            <p style="font-size:11.5px;color:rgba(255,255,255,.62)">Menu Items</p>
+          </div>
+          <div class="st-div"></div>
+          <div style="text-align:center">
+            <p style="font-size:1.55rem;font-weight:900;color:#fff;line-height:1">4.8★</p>
+            <p style="font-size:11.5px;color:rgba(255,255,255,.62)">Student Rating</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Visual side -->
+      <div style="position:relative;width:410px;height:410px;flex-shrink:0">
+        <div class="hero-ring">
+          <img src="https://images.unsplash.com/photo-1567521464027-f127ff144326?w=700&q=80" alt="Delicious food" onerror="this.style.background='#0284c7'" />
+        </div>
+        <div class="chip" style="top:22px;right:-8px;animation:floatUp 3s ease-in-out infinite">
+          <div class="chip-icon"><i class="fas fa-clock"></i></div>
+          <div><small>Ready in</small><strong>15 mins</strong></div>
+        </div>
+        <div class="chip" style="bottom:28px;left:-12px;animation:floatUp 3s ease-in-out 1.5s infinite">
+          <div class="chip-icon"><i class="fas fa-tag"></i></div>
+          <div><small>Today's Deal</small><strong>20% OFF</strong></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Social bar -->
+    <div class="social-bar">
+      <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+      <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+      <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+      <a href="#" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+    </div>
+
+    <!-- Wave -->
+    <div class="hero-wave">
+      <svg viewBox="0 0 1440 72" preserveAspectRatio="none" style="width:100%;display:block">
+        <path d="M0,36 C360,72 1080,0 1440,36 L1440,72 L0,72 Z" fill="white"/>
+      </svg>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════
+       FEATURES
+  ════════════════════════════════════════════════════════ -->
+  <section style="padding:68px 0;background:#fff" id="features">
+    <div class="ctr">
+      <div class="f4g rv" style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px">
+        <div class="fc"><span class="fc-em">🥗</span><h4 class="font-bold text-slate-900 mb-1" style="font-size:14.5px">Fresh Daily Meals</h4><p class="fc-sub">Prepared Fresh</p><p class="text-slate-500" style="font-size:12.5px;line-height:1.6">Every meal prepared fresh each morning with quality, locally sourced ingredients.</p></div>
+        <div class="fc"><span class="fc-em">⚡</span><h4 class="font-bold text-slate-900 mb-1" style="font-size:14.5px">Fast Pickup</h4><p class="fc-sub">Skip the Queue</p><p class="text-slate-500" style="font-size:12.5px;line-height:1.6">Order ahead and collect your meal without standing in long lunch queues.</p></div>
+        <div class="fc"><span class="fc-em">📊</span><h4 class="font-bold text-slate-900 mb-1" style="font-size:14.5px">Nutrition Info</h4><p class="fc-sub">Eat Smart</p><p class="text-slate-500" style="font-size:12.5px;line-height:1.6">Full calorie counts and nutritional data available for every single menu item.</p></div>
+        <div class="fc"><span class="fc-em">📱</span><h4 class="font-bold text-slate-900 mb-1" style="font-size:14.5px">Easy Ordering</h4><p class="fc-sub">One Tap Away</p><p class="text-slate-500" style="font-size:12.5px;line-height:1.6">Simple, intuitive ordering designed for busy students always on the go.</p></div>
+        <div class="fc"><span class="fc-em">🎓</span><h4 class="font-bold text-slate-900 mb-1" style="font-size:14.5px">Student Discounts</h4><p class="fc-sub">Save More</p><p class="text-slate-500" style="font-size:12.5px;line-height:1.6">Exclusive deals and combo offers available for all enrolled students.</p></div>
+        <div class="fc"><span class="fc-em">🥦</span><h4 class="font-bold text-slate-900 mb-1" style="font-size:14.5px">Special Diets</h4><p class="fc-sub">For Everyone</p><p class="text-slate-500" style="font-size:12.5px;line-height:1.6">Vegetarian, vegan, and allergen-aware options always available on the menu.</p></div>
+        <div class="fc"><span class="fc-em">📅</span><h4 class="font-bold text-slate-900 mb-1" style="font-size:14.5px">Weekly Meal Plans</h4><p class="fc-sub">Plan Ahead</p><p class="text-slate-500" style="font-size:12.5px;line-height:1.6">Subscribe to weekly meal plans and save up to 30% on your food budget.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════
+       TODAY'S SPECIALS
+  ════════════════════════════════════════════════════════ -->
+  <section style="padding:68px 0;background:#f0f9ff" id="specials">
+    <div class="ctr">
+      <div class="text-center rv" style="margin-bottom:40px">
+        <p class="sec-tag">Limited Time Offers</p>
+        <h2 class="sec-h">Today's <span>Special Deals</span></h2>
+        <div class="dots-row"><span class="dot on"></span><span class="dot"></span><span class="dot"></span></div>
+      </div>
+      <div class="s3g rv" style="display:grid;grid-template-columns:repeat(3,1fr);gap:22px">
+
+        <div class="spc">
+          <div class="spc-img">
+            <img src="https://images.unsplash.com/photo-1574484284002-952d92456975?w=500&q=80" alt="Jollof Rice Combo" onerror="this.style.background='#0284c7'" />
+            <span class="bdg-sale">-25%</span>
+          </div>
+          <div style="padding:18px">
+            <h3 class="font-bold text-slate-900 mb-1" style="font-size:15.5px">Jollof Rice Combo</h3>
+            <p class="text-slate-500 mb-3" style="font-size:13px;line-height:1.55">Smoky party jollof rice with grilled chicken, fried plantain &amp; a chilled drink.</p>
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <div style="display:flex;align-items:baseline;gap:7px">
+                <span style="font-size:1.15rem;font-weight:800;color:#0ea5e9">₦800</span>
+                <span style="font-size:12.5px;color:#94a3b8;text-decoration:line-through">₦1,100</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:7px">
+                <button class="like-btn"><i class="far fa-heart"></i></button>
+                <button class="atc" data-name="Jollof Rice Combo" data-price="800" data-img="https://images.unsplash.com/photo-1574484284002-952d92456975?w=80&q=60">Order <i class="fas fa-cart-plus"></i></button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="spc">
+          <div class="spc-img">
+            <img src="https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?w=500&q=80" alt="Power Breakfast Set" onerror="this.style.background='#0284c7'" />
+            <span class="bdg-sale">-20%</span>
+          </div>
+          <div style="padding:18px">
+            <h3 class="font-bold text-slate-900 mb-1" style="font-size:15.5px">Power Breakfast Set</h3>
+            <p class="text-slate-500 mb-3" style="font-size:13px;line-height:1.55">Scrambled eggs, toast, baked beans, sausage &amp; fresh orange juice.</p>
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <div style="display:flex;align-items:baseline;gap:7px">
+                <span style="font-size:1.15rem;font-weight:800;color:#0ea5e9">₦600</span>
+                <span style="font-size:12.5px;color:#94a3b8;text-decoration:line-through">₦750</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:7px">
+                <button class="like-btn"><i class="far fa-heart"></i></button>
+                <button class="atc" data-name="Power Breakfast Set" data-price="600" data-img="https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?w=80&q=60">Order <i class="fas fa-cart-plus"></i></button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="spc">
+          <div class="spc-img">
+            <img src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=500&q=80" alt="Veggie Power Bowl" onerror="this.style.background='#0284c7'" />
+            <span class="bdg-new">NEW</span>
+          </div>
+          <div style="padding:18px">
+            <h3 class="font-bold text-slate-900 mb-1" style="font-size:15.5px">Veggie Power Bowl</h3>
+            <p class="text-slate-500 mb-3" style="font-size:13px;line-height:1.55">Roasted veggies, quinoa, avocado &amp; tahini dressing — healthy &amp; filling!</p>
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <div style="display:flex;align-items:baseline;gap:7px">
+                <span style="font-size:1.15rem;font-weight:800;color:#0ea5e9">₦700</span>
+                <span style="font-size:12.5px;color:#94a3b8;text-decoration:line-through">₦850</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:7px">
+                <button class="like-btn"><i class="far fa-heart"></i></button>
+                <button class="atc" data-name="Veggie Power Bowl" data-price="700" data-img="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=80&q=60">Order <i class="fas fa-cart-plus"></i></button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════
+       FULL MENU
+  ════════════════════════════════════════════════════════ -->
+  <section style="padding:68px 0;background:#fff" id="menu">
+    <div class="ctr">
+      <div class="text-center rv" style="margin-bottom:30px">
+        <p class="sec-tag">What We Serve</p>
+        <h2 class="sec-h">Our <span>Full Menu</span></h2>
+      </div>
+      <div class="rv" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:22px">
+        <div style="display:flex;gap:8px;flex-wrap:wrap" id="tabsWrap">
+          <button class="tab on" data-tab="all">All Items</button>
+          <button class="tab" data-tab="breakfast">🌅 Breakfast</button>
+          <button class="tab" data-tab="lunch">🍽️ Lunch</button>
+          <button class="tab" data-tab="snacks">🍟 Snacks</button>
+          <button class="tab" data-tab="drinks">🥤 Drinks</button>
+        </div>
+        <div class="srch" style="width:250px">
+          <i class="fas fa-search"></i>
+          <input type="text" id="srchIn" placeholder="Search menu…" />
+        </div>
+      </div>
+      <div class="m4g rv" id="menuGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:18px"></div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════
+       NUTRITION
+  ════════════════════════════════════════════════════════ -->
+  <section style="padding:68px 0;background:#f0f9ff" id="nutrition">
+    <div class="ctr">
+      <div class="n2f rv" style="display:flex;align-items:center;gap:56px">
+        <div style="flex:1">
+          <p class="sec-tag">Eat Well, Study Better</p>
+          <h2 class="sec-h">Nutrition <span>Transparency</span></h2>
+          <p class="text-slate-500 mb-5" style="font-size:13.5px;line-height:1.78">We believe informed students make better food choices. Every item on our menu comes with full nutritional information — calories, protein, carbs, fats, and allergens clearly labelled.</p>
+          <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:22px">
+            <span class="nb"><i class="fas fa-leaf"></i> Vegan Options</span>
+            <span class="nb"><i class="fas fa-seedling"></i> Vegetarian</span>
+            <span class="nb"><i class="fas fa-wheat-awn-slash"></i> Gluten-Free</span>
+            <span class="nb"><i class="fas fa-triangle-exclamation"></i> Allergen Info</span>
+          </div>
+        </div>
+        <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:13px">
+          <div style="background:#fff;border-radius:15px;padding:17px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #e0f2fe"><div style="width:46px;height:46px;border-radius:12px;background:#fee2e2;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0">🔥</div><div><p class="font-bold text-slate-900" style="font-size:13.5px">Avg. 650 kcal</p><p class="text-slate-500" style="font-size:12px">Per lunch serving</p></div></div>
+          <div style="background:#fff;border-radius:15px;padding:17px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #e0f2fe"><div style="width:46px;height:46px;border-radius:12px;background:#dcfce7;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0">💪</div><div><p class="font-bold text-slate-900" style="font-size:13.5px">25g Protein</p><p class="text-slate-500" style="font-size:12px">High-protein options</p></div></div>
+          <div style="background:#fff;border-radius:15px;padding:17px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #e0f2fe"><div style="width:46px;height:46px;border-radius:12px;background:#fef3c7;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0">🌾</div><div><p class="font-bold text-slate-900" style="font-size:13.5px">Whole Grains</p><p class="text-slate-500" style="font-size:12px">In all bread products</p></div></div>
+          <div style="background:#fff;border-radius:15px;padding:17px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #e0f2fe"><div style="width:46px;height:46px;border-radius:12px;background:#ede9fe;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0">🥛</div><div><p class="font-bold text-slate-900" style="font-size:13.5px">Dairy-Free</p><p class="text-slate-500" style="font-size:12px">Alternatives available</p></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════
+       ABOUT
+  ════════════════════════════════════════════════════════ -->
+  <section style="padding:76px 0;background:#fff" id="about">
+    <div class="ctr">
+      <div class="ab-flex rv" style="display:flex;align-items:center;gap:56px">
+        <div style="flex:1;position:relative">
+          <img src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=700&q=80" alt="FORZA Food Hub Kitchen" class="ab-img" onerror="this.style.background='#0284c7'" />
+          <div class="ab-badge">
+            <strong>5+</strong>
+            <span>Years Serving<br>with Excellence</span>
+          </div>
+        </div>
+        <div style="flex:1">
+          <p class="sec-tag">About Us</p>
+          <h2 class="sec-h">FORZA FOOD HUB — <span>Fuelling Young Minds</span></h2>
+          <p class="text-slate-500 mb-4" style="font-size:13.5px;line-height:1.78">At FORZA FOOD HUB, we believe great food is the foundation of great learning. Our school cafeteria is more than just a place to eat — it's a space where students recharge, connect, and prepare for the challenges ahead.</p>
+          <p class="text-slate-500 mb-5" style="font-size:13.5px;line-height:1.78">We partner with certified nutritionists to ensure every meal meets the dietary needs of growing students. From hearty breakfasts to satisfying lunches, every dish is crafted with care, freshness, and your health in mind.</p>
+          <div style="margin-bottom:26px">
+            <div class="chk"><i class="fas fa-check-circle"></i> Certified by School Health Board</div>
+            <div class="chk"><i class="fas fa-check-circle"></i> 100% Fresh Ingredients Daily</div>
+            <div class="chk"><i class="fas fa-check-circle"></i> Allergen-Free Options Available</div>
+            <div class="chk"><i class="fas fa-check-circle"></i> Student-Friendly Pricing</div>
+          </div>
+          <a href="#menu" class="btn-sky">Explore Our Menu <i class="fas fa-arrow-right"></i></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════
+       TESTIMONIALS
+  ════════════════════════════════════════════════════════ -->
+  <section style="padding:68px 0;background:#f0f9ff" id="testimonials">
+    <div class="ctr">
+      <div class="text-center rv" style="margin-bottom:38px">
+        <p class="sec-tag">What Students Say</p>
+        <h2 class="sec-h">Student <span>Reviews</span></h2>
+      </div>
+      <div class="t3g rv" style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px">
+
+        <div class="tc">
+          <div style="color:#f59e0b;font-size:.95rem;margin-bottom:11px">★★★★★</div>
+          <p style="color:#475569;font-size:13.5px;line-height:1.72;font-style:italic">"The jollof rice at FORZA is honestly better than home cooking! I eat here every day and never get tired of it. The online ordering makes everything so convenient during break time."</p>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:17px">
+            <div class="av" style="background:#0ea5e9">AO</div>
+            <div><strong class="text-slate-900" style="font-size:13px;display:block">Adaeze Okonkwo</strong><span style="font-size:11.5px;color:#94a3b8">300l Student</span></div>
+          </div>
+        </div>
+
+        <div class="tc">
+          <div style="color:#f59e0b;font-size:.95rem;margin-bottom:11px">★★★★★</div>
+          <p style="color:#475569;font-size:13.5px;line-height:1.72;font-style:italic">"As a vegetarian, I used to struggle to find good food at school. FORZA changed that completely! Their veggie bowls are amazing and the staff are always super friendly and helpful."</p>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:17px">
+            <div class="av" style="background:#0284c7">EB</div>
+            <div><strong class="text-slate-900" style="font-size:13px;display:block">Emmanuel Bello</strong><span style="font-size:11.5px;color:#94a3b8">200l Student</span></div>
+          </div>
+        </div>
+
+        <div class="tc">
+          <div style="color:#f59e0b;font-size:.95rem;margin-bottom:11px">★★★★☆</div>
+          <p style="color:#475569;font-size:13.5px;line-height:1.72;font-style:italic">"The meal plan saved me so much money this term! I love the free snacks and the Power Breakfast Set is my absolute favourite way to start the school day."</p>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:17px">
+            <div class="av" style="background:#0369a1">FK</div>
+            <div><strong class="text-slate-900" style="font-size:13px;display:block">Fatima Kabir</strong><span style="font-size:11.5px;color:#94a3b8">500l Student</span></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════
+       MEAL PLANS
+  ════════════════════════════════════════════════════════ -->
+  <section style="padding:68px 0;background:#fff" id="meal-plans">
+    <div class="ctr">
+      <div class="text-center rv" style="margin-bottom:46px">
+        <p class="sec-tag">Save More, Eat Better</p>
+        <h2 class="sec-h">Weekly <span>Meal Plans</span></h2>
+      </div>
+      <div class="p3g rv" style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;align-items:start">
+
+        <div class="pc">
+          <h3 class="font-bold text-slate-900 mb-1" style="font-size:17px">Basic Plan</h3>
+          <div style="font-size:1.9rem;font-weight:900;color:#0ea5e9;margin:7px 0">₦5,000<span style="font-size:.8rem;font-weight:400;color:#94a3b8"> /week</span></div>
+          <ul style="list-style:none;padding:0;margin:16px 0">
+            <li class="pl-li"><i class="fas fa-check" style="color:#22c55e"></i> 5 Lunches per week</li>
+            <li class="pl-li"><i class="fas fa-check" style="color:#22c55e"></i> 1 Free Snack daily</li>
+            <li class="pl-li" style="opacity:.38"><i class="fas fa-times" style="color:#94a3b8"></i> Breakfast included</li>
+            <li class="pl-li" style="opacity:.38"><i class="fas fa-times" style="color:#94a3b8"></i> Priority Ordering</li>
+          </ul>
+          <button class="p-btn" onclick="window.location.href='meal-plan-signup.html?plan=basic'">Get Started</button>
+        </div>
+
+        <div class="pc pc-feat">
+          <div class="pop-tag">Most Popular</div>
+          <h3 style="font-size:17px;font-weight:800;color:#fff;margin-bottom:3px">Student Plan</h3>
+          <div style="font-size:1.9rem;font-weight:900;color:#fff;margin:7px 0">₦8,500<span style="font-size:.8rem;font-weight:400;opacity:.7"> /week</span></div>
+          <ul style="list-style:none;padding:0;margin:16px 0">
+            <li class="pl-li" style="color:rgba(255,255,255,.88);border-bottom-color:rgba(255,255,255,.1)"><i class="fas fa-check" style="color:#86efac"></i> 5 Lunches per week</li>
+            <li class="pl-li" style="color:rgba(255,255,255,.88);border-bottom-color:rgba(255,255,255,.1)"><i class="fas fa-check" style="color:#86efac"></i> 5 Breakfasts per week</li>
+            <li class="pl-li" style="color:rgba(255,255,255,.88);border-bottom-color:rgba(255,255,255,.1)"><i class="fas fa-check" style="color:#86efac"></i> 2 Free Snacks daily</li>
+            <li class="pl-li" style="color:rgba(255,255,255,.88);border-bottom-color:rgba(255,255,255,.1)"><i class="fas fa-check" style="color:#86efac"></i> Priority Ordering</li>
+          </ul>
+          <button class="p-btn" onclick="window.location.href='meal-plan-signup.html?plan=student'">Get Started</button>
+        </div>
+
+        <div class="pc">
+          <h3 class="font-bold text-slate-900 mb-1" style="font-size:17px">Premium Plan</h3>
+          <div style="font-size:1.9rem;font-weight:900;color:#0ea5e9;margin:7px 0">₦12,000<span style="font-size:.8rem;font-weight:400;color:#94a3b8"> /week</span></div>
+          <ul style="list-style:none;padding:0;margin:16px 0">
+            <li class="pl-li"><i class="fas fa-check" style="color:#22c55e"></i> Unlimited Meals</li>
+            <li class="pl-li"><i class="fas fa-check" style="color:#22c55e"></i> All Beverages Included</li>
+            <li class="pl-li"><i class="fas fa-check" style="color:#22c55e"></i> Free Snacks Anytime</li>
+            <li class="pl-li"><i class="fas fa-check" style="color:#22c55e"></i> VIP Priority Ordering</li>
+          </ul>
+          <button class="p-btn" onclick="window.location.href='meal-plan-signup.html?plan=premium'">Get Started</button>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════
+       FOOTER
+  ════════════════════════════════════════════════════════ -->
+  <footer style="background:#0f172a;color:#94a3b8;padding:60px 0 0">
+    <div class="ctr">
+      <div class="ft4" style="display:grid;grid-template-columns:2fr 1fr 1fr 1.5fr;gap:38px;margin-bottom:38px">
+        <div>
+          <div style="display:flex;align-items:center;gap:9px;margin-bottom:13px">
+            <div style="width:35px;height:35px;background:#0ea5e9;border-radius:9px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px"><i class="fas fa-utensils"></i></div>
+            <span style="font-size:1.25rem;font-weight:900;color:#fff">FORZA</span>
+          </div>
+          <p style="font-size:13px;line-height:1.72;margin-bottom:17px">Fuelling young minds with fresh, nutritious, and delicious meals every school day.</p>
+          <div style="display:flex;gap:8px">
+            <a href="#" class="sa" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+            <a href="#" class="sa" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+            <a href="#" class="sa" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+            <a href="#" class="sa" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+          </div>
+        </div>
+        <div>
+          <h4 style="color:#fff;font-weight:700;font-size:13.5px;margin-bottom:13px">Quick Links</h4>
+          <a href="#menu"       class="fl">Full Menu</a>
+          <a href="#specials"   class="fl">Daily Specials</a>
+          <a href="#meal-plans" class="fl">Meal Plans</a>
+          <a href="#nutrition"  class="fl">Nutrition Info</a>
+          <a href="#about"      class="fl">About Us</a>
+        </div>
+        <div>
+          <h4 style="color:#fff;font-weight:700;font-size:13.5px;margin-bottom:13px">Student Support</h4>
+          <a href="my-account.html" class="fl">My Account</a>
+          <a href="wallet-topup.html" class="fl">Top Up Wallet</a>
+          <a href="order-history.html" class="fl">Order History</a>
+          <a href="feedback.html" class="fl">Leave Feedback</a>
+          <a href="faqs.html" class="fl">FAQs</a>
+        </div>
+        <div>
+          <h4 style="color:#fff;font-weight:700;font-size:13.5px;margin-bottom:13px">Contact Us</h4>
+          <div class="fci"><i class="fas fa-phone"></i>+234 703 456 7890</div>
+          <div class="fci"><i class="fas fa-envelope"></i>forza@schoolcafe.edu.ng</div>
+          <div class="fci"><i class="fas fa-clock"></i>Sun–Sat: 9:00 AM – 8:00 PM</div>
+          <div class="fci"><i class="fas fa-map-marker-alt"></i>Bowen University, Iwo, Osun State</div>
+        </div>
+      </div>
+      <div class="ft-bot" style="border-top:1px solid rgba(255,255,255,.07);padding:20px 0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:7px;font-size:12.5px">
+        <p>&copy; 2026 FORZA FOOD HUB. All Rights Reserved.</p>
+        <p>Made with <span style="color:#ef4444">&#9829;</span> for students</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ════════════════════════════════════════════════════════
+       JAVASCRIPT
+  ════════════════════════════════════════════════════════ -->
+  <script>
+    /* ── Menu data (loaded from Firestore) ─────────────────── */
+    let ITEMS = [];
+
+    /* ── Cart state ─────────────────────────────────────────── */
+    let cart = JSON.parse(localStorage.getItem('forzaCart') || '[]');
+    const save = () => localStorage.setItem('forzaCart', JSON.stringify(cart));
+    const total = () => cart.reduce((s, i) => s + i.price * i.qty, 0);
+    const count = () => cart.reduce((s, i) => s + i.qty, 0);
+
+    /* ── Toast ──────────────────────────────────────────────── */
+    let tTimer;
+    function toast(msg) {
+      document.getElementById('t-msg').textContent = msg;
+      const el = document.getElementById('toast');
+      el.classList.add('show');
+      clearTimeout(tTimer);
+      tTimer = setTimeout(() => el.classList.remove('show'), 2800);
+    }
+
+    /* ── Badge update ───────────────────────────────────────── */
+    function updateBadges() {
+      const n = count();
+      ['navBdg', 'ctChip'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = n;
+      });
+      const b = document.getElementById('navBdg');
+      if (b) { b.classList.remove('bump'); void b.offsetWidth; b.classList.add('bump'); }
+    }
+
+    /* ── Render cart ────────────────────────────────────────── */
+    function renderCart() {
+      const body  = document.getElementById('cartBody');
+      const empty = document.getElementById('emptyCart');
+      const ftr   = document.getElementById('cartFtr');
+
+      /* remove old cart-item rows */
+      body.querySelectorAll('.ci').forEach(el => el.remove());
+
+      if (!cart.length) {
+        empty.style.display = 'flex';
+        ftr.style.display   = 'none';
+        updateBadges();
+        return;
+      }
+
+      empty.style.display = 'none';
+      ftr.style.display   = 'block';
+
+      cart.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'ci';
+        div.innerHTML = `
+          <img src="${item.img}" alt="${item.name}" onerror="this.src='https://images.unsplash.com/photo-1567521464027-f127ff144326?w=80&q=50'">
+          <div class="ci-inf">
+            <p class="ci-nm">${item.name}</p>
+            <p class="ci-pr">₦${(item.price * item.qty).toLocaleString()}</p>
+          </div>
+          <div class="qi">
+            <button class="qb" data-id="${item.id}" data-act="dec">−</button>
+            <span class="qn">${item.qty}</span>
+            <button class="qb" data-id="${item.id}" data-act="inc">+</button>
+          </div>
+          <button class="di" data-id="${item.id}" title="Remove"><i class="fas fa-trash-alt"></i></button>`;
+        body.appendChild(div);
+      });
+
+      const sub  = total();
+      const disc = sub >= 1000 ? Math.round(sub * .1) : 0;
+      document.getElementById('subT').textContent  = '₦' + sub.toLocaleString();
+      document.getElementById('discT').textContent = '-₦' + disc.toLocaleString();
+      document.getElementById('totT').textContent  = '₦' + (sub - disc).toLocaleString();
+      document.getElementById('discRow').style.display = disc ? 'flex' : 'none';
+
+      updateBadges();
+    }
+
+    /* ── Cart actions ───────────────────────────────────────── */
+    function addToCart(name, price, img) {
+      const ex = cart.find(i => i.name === name);
+      if (ex) { ex.qty++; }
+      else     { cart.push({ id: Date.now(), name, price: +price, img, qty: 1 }); }
+      save(); renderCart(); toast(`"${name}" added to cart!`);
+    }
+
+    function changeQty(id, act) {
+      const idx = cart.findIndex(i => i.id === +id);
+      if (idx < 0) return;
+      act === 'inc' ? cart[idx].qty++ : cart[idx].qty--;
+      if (cart[idx].qty <= 0) cart.splice(idx, 1);
+      save(); renderCart();
+    }
+
+    function removeItem(id) {
+      cart = cart.filter(i => i.id !== +id);
+      save(); renderCart();
+    }
+
+    function clearCart() {
+      cart = []; save(); renderCart();
+    }
+
+    /* ── Sidebar ────────────────────────────────────────────── */
+    function openCart()  { document.getElementById('cartSd').classList.add('open'); document.getElementById('cartOv').classList.add('open'); document.body.style.overflow = 'hidden'; }
+    function closeCartFn() { document.getElementById('cartSd').classList.remove('open'); document.getElementById('cartOv').classList.remove('open'); document.body.style.overflow = ''; }
+
+    /* ── Modal ──────────────────────────────────────────────── */
+    function openModal() {
+      document.getElementById('oRef').textContent = '#FZH-' + Math.floor(1000 + Math.random() * 9000);
+      document.getElementById('oModal').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeModal() { document.getElementById('oModal').classList.remove('open'); document.body.style.overflow = ''; }
+
+    /* ── Menu render ────────────────────────────────────────── */
+    const tagCls = { popular:'tp', veg:'tv', new:'tn', spicy:'ts' };
+    const tagLbl = { popular:'🔥 popular', veg:'🌿 veg', new:'✨ new', spicy:'🌶 spicy' };
+
+    function renderMenu(list) {
+      const grid = document.getElementById('menuGrid');
+      if (!list.length) {
+        grid.innerHTML = '<div class="no-it"><i class="fas fa-search"></i><p>No items found</p></div>';
+        return;
+      }
+      grid.innerHTML = list.map(it => `
+        <div class="mc">
+          <div style="overflow:hidden;height:160px">
+            <img class="mc-img" src="${it.img}" alt="${it.name}" loading="lazy"
+              onerror="this.src='https://images.unsplash.com/photo-1567521464027-f127ff144326?w=400&q=50'">
+          </div>
+          <div class="mc-bd">
+            <div>${it.tags.map(t => `<span class="itag ${tagCls[t] || ''}">${tagLbl[t] || t}</span>`).join('')}</div>
+            <p class="mc-nm">${it.name}</p>
+            <p class="mc-ds">${it.desc}</p>
+            ${it.cal ? `<p class="mc-cal"><i class="fas fa-fire" style="color:#f97316;font-size:9px"></i> ${it.cal} kcal</p>` : ''}
+            <div class="mc-ft">
+              <span class="mc-pr">₦${it.price.toLocaleString()}</span>
+              <button class="atc" data-name="${it.name}" data-price="${it.price}" data-img="${it.img}">
+                Add <i class="fas fa-plus"></i>
+              </button>
+            </div>
+          </div>
+        </div>`).join('');
+    }
+
+    let activeTab = 'all', searchQ = '';
+    function filterMenu() {
+      let list = ITEMS;
+      if (activeTab !== 'all') list = list.filter(i => i.cat === activeTab);
+      if (searchQ) list = list.filter(i => i.name.toLowerCase().includes(searchQ));
+      renderMenu(list);
+    }
+
+    /* ── Scroll reveal ──────────────────────────────────────── */
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('vis'); });
+    }, { threshold: 0.08 });
+
+    /* ── INIT ───────────────────────────────────────────────── */
+    document.addEventListener('DOMContentLoaded', () => {
+
+      /* load menu from Firestore — only show available items */
+      const grid = document.getElementById('menuGrid');
+      grid.innerHTML = '<div class="no-it"><i class="fas fa-spinner fa-spin" style="font-size:2rem;color:#bae6fd"></i><p style="margin-top:10px">Loading menu…</p></div>';
+      firebase.firestore().collection('menuItems')
+        .where('available', '!=', false)
+        .get()
+        .then(snapshot => {
+          ITEMS = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          filterMenu();
+        })
+        .catch(() => {
+          grid.innerHTML = '<div class="no-it"><i class="fas fa-exclamation-circle"></i><p>Could not load menu. Please refresh.</p></div>';
+        });
+
+      renderCart();
+
+      document.querySelectorAll('.rv').forEach(el => obs.observe(el));
+
+      /* cart open/close */
+      document.getElementById('openCart').addEventListener('click', openCart);
+      document.getElementById('closeCart').addEventListener('click', closeCartFn);
+      document.getElementById('cartOv').addEventListener('click', closeCartFn);
+
+      /* cart body delegation */
+      document.getElementById('cartBody').addEventListener('click', e => {
+        const q = e.target.closest('.qb');
+        const d = e.target.closest('.di');
+        if (q) changeQty(q.dataset.id, q.dataset.act);
+        if (d) removeItem(d.dataset.id);
+      });
+
+      /* checkout */
+      document.getElementById('coBtn').addEventListener('click', () => {
+        if (!cart.length) return;
+        closeCartFn();
+        clearCart();
+        setTimeout(openModal, 280);
+      });
+
+      /* clear cart */
+      document.getElementById('clBtn').addEventListener('click', () => {
+        if (confirm('Remove all items from your cart?')) clearCart();
+      });
+
+      /* modal */
+      document.getElementById('mOk').addEventListener('click', closeModal);
+      document.getElementById('oModal').addEventListener('click', e => {
+        if (e.target === document.getElementById('oModal')) closeModal();
+      });
+
+      /* add-to-cart & like (delegated from body) */
+      document.body.addEventListener('click', e => {
+        const atcBtn = e.target.closest('.atc');
+        if (atcBtn) addToCart(atcBtn.dataset.name, atcBtn.dataset.price, atcBtn.dataset.img);
+
+        const lb = e.target.closest('.like-btn');
+        if (lb) {
+          lb.classList.toggle('liked');
+          lb.innerHTML = lb.classList.contains('liked')
+            ? '<i class="fas fa-heart"></i>'
+            : '<i class="far fa-heart"></i>';
+        }
+      });
+
+      /* menu tabs */
+      document.querySelectorAll('.tab').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.tab').forEach(b => b.classList.remove('on'));
+          btn.classList.add('on');
+          activeTab = btn.dataset.tab;
+          filterMenu();
+        });
+      });
+
+      /* search */
+      document.getElementById('srchIn').addEventListener('input', e => {
+        searchQ = e.target.value.toLowerCase().trim();
+        filterMenu();
+      });
+
+      /* header scroll */
+      const hdr = document.getElementById('hdr');
+      window.addEventListener('scroll', () => hdr.classList.toggle('scrolled', scrollY > 55), { passive: true });
+
+      /* hamburger */
+      const mob = document.getElementById('mobMenu');
+      document.getElementById('hbg').addEventListener('click', () => mob.classList.toggle('open'));
+      mob.querySelectorAll('a').forEach(a => a.addEventListener('click', () => mob.classList.remove('open')));
+
+      /* plan buttons */
+      document.querySelectorAll('.p-btn').forEach(btn => {
+        btn.addEventListener('click', () => toast('Redirecting to meal plan signup…'));
+      });
+
+    });
+  </script>
+</body>
+</html>

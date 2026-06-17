@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FAQs — FORZA FOOD HUB</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Poppins','sans-serif'] } } } }</script>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'Poppins', sans-serif; background: #f0f9ff; }
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-thumb { background: #0ea5e9; border-radius: 4px; }
+
+    .pg-hdr { background:#fff; border-bottom:1px solid #e0f2fe; position:sticky; top:0; z-index:50; box-shadow:0 2px 12px rgba(14,165,233,.08); }
+    .pg-hdr-inner { max-width:1100px; margin:0 auto; padding:0 24px; height:64px; display:flex; align-items:center; justify-content:space-between; }
+    .logo-link { display:flex; align-items:center; gap:10px; text-decoration:none; }
+    .logo-plate { width:36px; height:36px; background:#0ea5e9; border-radius:9px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:14px; }
+    .logo-txt { font-size:1.15rem; font-weight:900; color:#0f172a; }
+    .back-btn { display:inline-flex; align-items:center; gap:7px; background:#f0f9ff; color:#0ea5e9; border:1.5px solid #bae6fd; border-radius:8px; padding:7px 15px; font-size:13px; font-weight:600; text-decoration:none; transition:all .2s; }
+    .back-btn:hover { background:#0ea5e9; color:#fff; border-color:#0ea5e9; }
+    .pg-wrap { max-width:840px; margin:0 auto; padding:36px 24px 60px; }
+
+    /* Hero */
+    .faq-hero {
+      background:linear-gradient(135deg,#075985,#0284c7,#0ea5e9);
+      border-radius:20px; padding:44px 36px; color:#fff; text-align:center; margin-bottom:32px; position:relative; overflow:hidden;
+    }
+    .faq-hero::before { content:''; position:absolute; top:-30%; right:-5%; width:280px; height:280px; border-radius:50%; background:rgba(255,255,255,.07); }
+    .faq-hero::after { content:''; position:absolute; bottom:-40%; left:5%; width:200px; height:200px; border-radius:50%; background:rgba(255,255,255,.05); }
+
+    /* Search */
+    .search-wrap { position:relative; max-width:480px; margin:20px auto 0; z-index:2; }
+    .search-wrap input { width:100%; border:2px solid rgba(255,255,255,.3); border-radius:50px; padding:13px 20px 13px 48px; font-family:'Poppins',sans-serif; font-size:14px; background:rgba(255,255,255,.15); color:#fff; outline:none; transition:all .2s; }
+    .search-wrap input::placeholder { color:rgba(255,255,255,.6); }
+    .search-wrap input:focus { background:rgba(255,255,255,.25); border-color:rgba(255,255,255,.5); }
+    .search-wrap i { position:absolute; left:18px; top:50%; transform:translateY(-50%); color:rgba(255,255,255,.7); font-size:15px; }
+
+    /* Category filter */
+    .cat-bar { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:24px; }
+    .cat-btn { display:inline-flex; align-items:center; gap:7px; padding:9px 18px; border-radius:50px; border:1.5px solid #e0f2fe; background:#fff; font-family:'Poppins',sans-serif; font-size:13px; font-weight:600; color:#64748b; cursor:pointer; transition:all .2s; }
+    .cat-btn.active { background:#0ea5e9; color:#fff; border-color:#0ea5e9; }
+    .cat-btn:hover:not(.active) { border-color:#7dd3fc; color:#0ea5e9; }
+
+    /* Accordion */
+    .faq-section { margin-bottom:30px; }
+    .section-title { font-size:15px; font-weight:800; color:#0f172a; margin:0 0 12px; display:flex; align-items:center; gap:9px; }
+    .section-icon { width:34px; height:34px; border-radius:9px; background:#e0f2fe; color:#0ea5e9; display:flex; align-items:center; justify-content:center; font-size:14px; }
+
+    .faq-item { background:#fff; border:1px solid #e0f2fe; border-radius:12px; margin-bottom:8px; overflow:hidden; box-shadow:0 1px 6px rgba(14,165,233,.05); }
+    .faq-q { width:100%; display:flex; align-items:center; justify-content:space-between; padding:16px 20px; background:none; border:none; font-family:'Poppins',sans-serif; font-size:14px; font-weight:600; color:#0f172a; cursor:pointer; text-align:left; gap:12px; transition:background .15s; }
+    .faq-q:hover { background:#f8fafc; }
+    .faq-q .arrow { color:#0ea5e9; font-size:12px; transition:transform .3s; flex-shrink:0; }
+    .faq-q.open .arrow { transform:rotate(180deg); }
+    .faq-a { max-height:0; overflow:hidden; transition:max-height .35s ease, padding .35s ease; }
+    .faq-a.open { max-height:300px; }
+    .faq-a-inner { padding:0 20px 18px; font-size:13.5px; color:#475569; line-height:1.75; }
+    .faq-a-inner a { color:#0ea5e9; font-weight:600; text-decoration:none; }
+    .faq-a-inner a:hover { text-decoration:underline; }
+
+    /* Empty search */
+    .no-results { text-align:center; padding:50px 24px; display:none; }
+    .no-results i { font-size:2.5rem; color:#bae6fd; display:block; margin-bottom:14px; }
+
+    /* Contact CTA */
+    .cta-box { background:linear-gradient(135deg,#f0f9ff,#e0f2fe); border:1.5px solid #bae6fd; border-radius:16px; padding:28px; text-align:center; margin-top:32px; }
+
+    .pg-footer { background:#0f172a; color:#64748b; text-align:center; padding:24px; font-size:12.5px; }
+    .pg-footer a { color:#0ea5e9; text-decoration:none; }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="pg-hdr">
+  <div class="pg-hdr-inner">
+    <a href="index.html" class="logo-link">
+      <div class="logo-plate"><i class="fas fa-utensils"></i></div>
+      <span class="logo-txt">FORZA</span>
+    </a>
+    <a href="index.html" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Home</a>
+  </div>
+</header>
+
+<div class="pg-wrap">
+  <p style="font-size:12.5px;color:#94a3b8;margin-bottom:22px">
+    <a href="index.html" style="color:#0ea5e9;text-decoration:none">Home</a> &rsaquo; FAQs
+  </p>
+
+  <!-- Hero -->
+  <div class="faq-hero" style="position:relative;z-index:1">
+    <div style="position:relative;z-index:2">
+      <p style="font-size:12px;font-weight:600;opacity:.75;letter-spacing:1px;text-transform:uppercase;margin:0 0 8px">Help Centre</p>
+      <h1 style="font-size:2rem;font-weight:900;margin:0 0 8px">Frequently Asked Questions</h1>
+      <p style="font-size:13.5px;opacity:.8;margin:0">Everything you need to know about FORZA FOOD HUB</p>
+      <div class="search-wrap">
+        <i class="fas fa-search"></i>
+        <input type="text" placeholder="Search questions…" oninput="searchFAQ(this.value)" id="faqSearch" />
+      </div>
+    </div>
+  </div>
+
+  <!-- Category buttons -->
+  <div class="cat-bar">
+    <button class="cat-btn active" onclick="filterCat('all',this)"><i class="fas fa-th-large"></i> All</button>
+    <button class="cat-btn" onclick="filterCat('orders',this)"><i class="fas fa-shopping-bag"></i> Orders</button>
+    <button class="cat-btn" onclick="filterCat('plans',this)"><i class="fas fa-calendar-alt"></i> Meal Plans</button>
+    <button class="cat-btn" onclick="filterCat('payment',this)"><i class="fas fa-credit-card"></i> Payment</button>
+    <button class="cat-btn" onclick="filterCat('general',this)"><i class="fas fa-info-circle"></i> General</button>
+  </div>
+
+  <div id="noResults" class="no-results">
+    <i class="fas fa-search"></i>
+    <p style="font-size:15px;font-weight:700;color:#0f172a;margin:0 0 6px">No results found</p>
+    <p style="font-size:13px;color:#94a3b8">Try a different keyword or browse by category above.</p>
+  </div>
+
+  <!-- FAQ Sections -->
+  <div id="faqContent">
+
+    <!-- Orders -->
+    <div class="faq-section" data-cat="orders">
+      <h2 class="section-title"><span class="section-icon"><i class="fas fa-shopping-bag"></i></span> Orders & Delivery</h2>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFAQ(this)">How do I place an order? <i class="fas fa-chevron-down arrow"></i></button>
+        <div class="faq-a"><div class="faq-a-inner">Browse the menu on our <a href="index.html#menu">Full Menu</a> page, select your items and add them to your cart, then click "Checkout" in the cart sidebar. You'll receive a confirmation notification once your order is accepted.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFAQ(this)">How long does it take to get my order ready? <i class="fas fa-chevron-down arrow"></i></button>
+        <div class="faq-a"><div class="faq-a-inner">Most orders are ready within 10–20 minutes during normal hours. During peak lunch hours (12 PM – 2 PM), it may take up to 30 minutes. Meal plan holders with Priority access get served first!</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFAQ(this)">Can I cancel or modify my order? <i class="fas fa-chevron-down arrow"></i></button>
+        <div class="faq-a"><div class="faq-a-inner">You can cancel or modify your order within 5 minutes of placing it. After preparation begins, cancellations are not possible. Visit <a href="order-history.html">Order History</a> or contact us at +234 703 456 7890.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFAQ(this)">Do you deliver to hostels or classrooms? <i class="fas fa-chevron-down arrow"></i></button>
+        <div class="faq-a"><div class="faq-a-inner">Currently, orders are pick-up only from the FORZA FOOD HUB counter. We're working on in-campus delivery for premium meal plan holders. Stay tuned for updates!</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFAQ(this)">What happens if an item I ordered is out of stock? <i class="fas fa-chevron-down arrow"></i></button>
+        <div class="faq-a"><div class="faq-a-inner">You'll be notified immediately and given the option to select a replacement item of equal or lesser value, or receive a full refund to your FORZA wallet.</div></div>
+      </div>
+    </div>
+
+    <!-- Meal Plans -->
+    <div class="faq-section" data-cat="plans">
+      <h2 class="section-title"><span class="section-icon"><i class="fas fa-calendar-alt"></i></span> Meal Plans</h2>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFAQ(this)">What meal plans are available? <i class="fas fa-chevron-down arrow"></i></button>
+        <div class="faq-a"><div class="faq-a-inner">We offer three plans: <strong>Basic (₦5,000/week)</strong> — 5 lunches + daily snack; <strong>Student (₦8,500/week)</strong> — 5 lunches + 5 breakfasts + 2 daily snacks + priority ordering; <strong>Premium (₦12,000/week)</strong> — unlimited meals, all beverages, and VIP access. See <a href="meal-plan-signup.html">Meal Plans</a> for full details.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFAQ(this)">How do I sign up for a meal plan? <i class="fas fa-chevron-down arrow"></i></button>
+        <div class="faq-a"><div class="faq-a-inner">Visit our <a href="meal-plan-signup.html">Meal Plan Signup</a> page, choose your preferred plan, fill in your student details, and complete payment. Your plan activates the next school day.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFAQ(this)">Can I pause or suspend my meal plan? <i class="fas fa-chevron-down arrow"></i></button>
+        <div class="faq-a"><div class="faq-a-inner">Yes! You can pause your plan for up to 3 days per week (e.g. during exams or illness). Unused days roll over to the next week. Contact us at least 24 hours in advance to pause.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFAQ(this)">Can I upgrade or downgrade my meal plan? <i class="fas fa-chevron-down arrow"></i></button>
+        <div class="faq-a"><div class="faq-a-inner">Yes! You can change your plan at the start of any new week. Upgrades take effect the next day; downgrades apply from the following Monday. Log in to <a href="my-account.html">My Account</a> to manage your plan.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFAQ(this)">Do meal plans include weekends? <i class="fas fa-chevron-down arrow"></i></button>
+        <div class="faq-a"><div class="faq-a-inner">Our standard plans cover Monday to Friday. However, the cafeteria is open on weekends (Saturday 10 AM – 6 PM, Sunday 12 PM – 6 PM) for à la carte ordering.</div></div>
+      </div>
+    </div>
+
+    <!-- Payment -->
+    <div class="faq-section" data-cat="payment">
+      <h2 class="section-title"><span class="section-icon"><i class="fas fa-credit-card"></i></span> Payment & Pricing</h2>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFAQ(this)">What payment methods do you accept? <i class="fas fa-chevron-down arrow"></i></button>
+        <div class="faq-a"><div class="faq-a-inner">We accept cash at the counter, bank transfers (Paystack), USSD, and FORZA Wallet top-ups. Card payments (Visa/Mastercard) are also available via our POS terminal.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFAQ(this)">Do students get any discounts? <i class="fas fa-chevron-down arrow"></i></button>
+        <div class="faq-a"><div class="faq-a-inner">Yes! A 10% student discount is automatically applied to all orders of ₦1,000 and above. Meal plan subscribers get additional savings of up to 30% compared to regular prices.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFAQ(this)">How does the FORZA Wallet work? <i class="fas fa-chevron-down arrow"></i></button>
+        <div class="faq-a"><div class="faq-a-inner">Load your FORZA Wallet at any time via bank transfer or at the counter. Use your wallet balance to pay instantly without cash.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFAQ(this)">Can I get a refund? <i class="fas fa-chevron-down arrow"></i></button>
+        <div class="faq-a"><div class="faq-a-inner">Refunds are processed for cancelled orders within 48 hours. Refunds go back to your FORZA Wallet or original payment method. For disputes, contact us at forza@schoolcafe.edu.ng.</div></div>
+      </div>
+    </div>
+
+    <!-- General -->
+    <div class="faq-section" data-cat="general">
+      <h2 class="section-title"><span class="section-icon"><i class="fas fa-info-circle"></i></span> General Information</h2>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFAQ(this)">What are your opening hours? <i class="fas fa-chevron-down arrow"></i></button>
+        <div class="faq-a"><div class="faq-a-inner"><strong>Weekdays:</strong> 7:00 AM – 8:00 PM<br><strong>Saturday:</strong> 10:00 AM – 6:00 PM<br><strong>Sunday:</strong> 12:00 PM – 6:00 PM<br>We remain open during most public holidays; check our social media for updates.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFAQ(this)">Where is FORZA FOOD HUB located? <i class="fas fa-chevron-down arrow"></i></button>
+        <div class="faq-a"><div class="faq-a-inner">We're located at the main student complex, Bowen University, Iwo, Osun State. We're right next to the main lecture hall — follow the FORZA signs from the main gate!</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFAQ(this)">Do you cater for dietary restrictions or allergies? <i class="fas fa-chevron-down arrow"></i></button>
+        <div class="faq-a"><div class="faq-a-inner">Yes! Many of our menu items are vegetarian-friendly (marked with 🥗). For specific allergy concerns (nuts, gluten, dairy), please speak to a staff member at the counter before ordering. We take food safety seriously.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFAQ(this)">How do I create an account? <i class="fas fa-chevron-down arrow"></i></button>
+        <div class="faq-a"><div class="faq-a-inner">Visit the <a href="my-account.html">My Account</a> page and sign up with your school email address. You'll need your student ID to verify your student status and unlock student discounts.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFAQ(this)">How do I contact FORZA FOOD HUB? <i class="fas fa-chevron-down arrow"></i></button>
+        <div class="faq-a"><div class="faq-a-inner">📞 <strong>+234 703 456 7890</strong><br>📧 <strong>forza@schoolcafe.edu.ng</strong><br>📱 DM us on Instagram or Twitter @ForzaFoodHub<br>Or visit us in person at the cafeteria — we're always happy to help!</div></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Contact CTA -->
+  <div class="cta-box">
+    <div style="font-size:1.8rem;margin-bottom:10px">🤔</div>
+    <h2 style="font-size:1.1rem;font-weight:800;color:#0f172a;margin:0 0 7px">Still have a question?</h2>
+    <p style="font-size:13.5px;color:#64748b;margin:0 0 18px">Can't find what you're looking for? Our team is happy to help!</p>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+      <a href="feedback.html" style="background:linear-gradient(135deg,#0284c7,#0ea5e9);color:#fff;border-radius:9px;padding:11px 22px;font-size:13.5px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:7px"><i class="fas fa-comment-dots"></i> Leave Feedback</a>
+      <a href="mailto:forza@schoolcafe.edu.ng" style="background:#fff;color:#0ea5e9;border:1.5px solid #bae6fd;border-radius:9px;padding:10px 20px;font-size:13.5px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:7px"><i class="fas fa-envelope"></i> Email Us</a>
+    </div>
+  </div>
+</div>
+
+<footer class="pg-footer">
+  <p>&copy; 2026 FORZA FOOD HUB · <a href="index.html">Back to Main Site</a> · <a href="feedback.html">Leave Feedback</a></p>
+</footer>
+
+<script>
+  function toggleFAQ(btn) {
+    const answer = btn.nextElementSibling;
+    const isOpen = btn.classList.contains('open');
+    document.querySelectorAll('.faq-q.open').forEach(b => {
+      b.classList.remove('open');
+      b.nextElementSibling.classList.remove('open');
+    });
+    if (!isOpen) {
+      btn.classList.add('open');
+      answer.classList.add('open');
+    }
+  }
+
+  let activeCategory = 'all';
+
+  function filterCat(cat, btn) {
+    activeCategory = cat;
+    document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('faqSearch').value = '';
+    applyFilter('', cat);
+  }
+
+  function searchFAQ(query) {
+    applyFilter(query, activeCategory);
+  }
+
+  function applyFilter(query, cat) {
+    const q = query.toLowerCase();
+    let anyVisible = false;
+
+    document.querySelectorAll('.faq-section').forEach(section => {
+      const catMatch = cat === 'all' || section.dataset.cat === cat;
+      if (!catMatch) { section.style.display = 'none'; return; }
+
+      let sectionHasVisible = false;
+      section.querySelectorAll('.faq-item').forEach(item => {
+        const text = item.textContent.toLowerCase();
+        const match = !q || text.includes(q);
+        item.style.display = match ? '' : 'none';
+        if (match) sectionHasVisible = true;
+      });
+
+      section.style.display = sectionHasVisible ? '' : 'none';
+      if (sectionHasVisible) anyVisible = true;
+    });
+
+    document.getElementById('noResults').style.display = anyVisible ? 'none' : 'block';
+  }
+</script>
+</body>
+</html>

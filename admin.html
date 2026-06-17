@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FORZA Admin — Menu Manager</title>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+  <script src="firebase-config.js"></script>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+  <!-- Google Fonts: Poppins -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+  <script>
+    tailwind.config = {
+      theme: { extend: { fontFamily: { sans: ['Poppins', 'sans-serif'] } } }
+    }
+  </script>
+
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'Poppins', sans-serif; background: #f0f9ff; min-height: 100vh; }
+
+    /* ── Login ── */
+    #loginScreen {
+      min-height: 100vh; display: flex; align-items: center;
+      justify-content: center; padding: 20px;
+      background: linear-gradient(135deg,#075985 0%,#0369a1 40%,#0ea5e9 100%);
+    }
+    .login-card {
+      background: #fff; border-radius: 24px; padding: 40px 32px;
+      width: 100%; max-width: 400px;
+      box-shadow: 0 25px 60px rgba(0,0,0,.22);
+    }
+    .login-input {
+      width: 100%; padding: 13px 16px; border: 2px solid #e0f2fe;
+      border-radius: 12px; font-family: 'Poppins', sans-serif;
+      font-size: 14px; outline: none; transition: border-color .2s;
+      margin-bottom: 14px;
+    }
+    .login-input:focus { border-color: #0ea5e9; }
+    .login-btn {
+      width: 100%; padding: 14px; background: #0ea5e9; color: #fff;
+      border: none; border-radius: 30px; font-size: 15px; font-weight: 700;
+      cursor: pointer; font-family: 'Poppins', sans-serif;
+      transition: background .2s; display: flex; align-items: center;
+      justify-content: center; gap: 8px;
+    }
+    .login-btn:hover { background: #0284c7; }
+    .login-btn:disabled { background: #7dd3fc; cursor: not-allowed; }
+
+    /* ── Header ── */
+    #appHeader {
+      background: #fff; border-bottom: 1px solid #e0f2fe;
+      padding: 0 20px; height: 60px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 100;
+      box-shadow: 0 2px 12px rgba(14,165,233,.08);
+    }
+    .h-logo { display: flex; align-items: center; gap: 9px; }
+    .h-plate {
+      width: 34px; height: 34px; border-radius: 9px;
+      background: #0ea5e9; color: #fff;
+      display: flex; align-items: center; justify-content: center; font-size: 13px;
+    }
+    .logout-btn {
+      padding: 7px 16px; border-radius: 30px;
+      border: 2px solid #e0f2fe; background: transparent;
+      color: #64748b; font-size: 12.5px; font-weight: 600;
+      cursor: pointer; font-family: 'Poppins', sans-serif;
+      transition: all .2s; display: flex; align-items: center; gap: 6px;
+    }
+    .logout-btn:hover { border-color: #fecaca; color: #ef4444; background: #fff5f5; }
+
+    /* ── Main content ── */
+    #dashboard { display: none; }
+    .main-wrap { max-width: 900px; margin: 0 auto; padding: 20px 16px 100px; }
+
+    /* ── Stats bar ── */
+    .stat-card {
+      background: #fff; border-radius: 14px; padding: 14px 18px;
+      border: 1px solid #e0f2fe; text-align: center;
+    }
+    .stat-card .num { font-size: 1.6rem; font-weight: 900; color: #0ea5e9; line-height: 1; }
+    .stat-card .lbl { font-size: 11px; color: #94a3b8; margin-top: 3px; }
+
+    /* ── Filter tabs ── */
+    .ftab {
+      padding: 7px 16px; border-radius: 30px;
+      border: 2px solid #e0f2fe; background: #fff;
+      color: #64748b; font-size: 13px; font-weight: 500;
+      cursor: pointer; transition: all .2s; font-family: 'Poppins', sans-serif;
+      white-space: nowrap;
+    }
+    .ftab:hover { border-color: #0ea5e9; color: #0ea5e9; }
+    .ftab.on { background: #0ea5e9; border-color: #0ea5e9; color: #fff; }
+
+    /* ── Item card ── */
+    .item-card {
+      background: #fff; border-radius: 16px; border: 1px solid #e0f2fe;
+      overflow: hidden; display: flex; gap: 0;
+      box-shadow: 0 2px 10px rgba(0,0,0,.05); transition: box-shadow .2s;
+    }
+    .item-card:hover { box-shadow: 0 6px 22px rgba(14,165,233,.14); }
+    .item-thumb {
+      width: 90px; min-width: 90px; height: 90px;
+      object-fit: cover; display: block;
+    }
+    .item-thumb-placeholder {
+      width: 90px; min-width: 90px; height: 90px;
+      background: #e0f2fe; display: flex; align-items: center;
+      justify-content: center; color: #7dd3fc; font-size: 1.6rem;
+    }
+    .item-info { flex: 1; padding: 12px 14px; min-width: 0; }
+    .item-name { font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .item-meta { font-size: 12px; color: #94a3b8; margin-bottom: 6px; }
+    .item-price { font-size: 15px; font-weight: 800; color: #0ea5e9; }
+    .item-actions { display: flex; align-items: center; gap: 7px; padding: 12px 12px 12px 0; flex-direction: column; justify-content: center; }
+
+    .edit-btn {
+      width: 34px; height: 34px; border-radius: 9px;
+      background: #f0f9ff; border: 1px solid #e0f2fe;
+      color: #0ea5e9; cursor: pointer; display: flex;
+      align-items: center; justify-content: center; font-size: 13px;
+      transition: all .2s;
+    }
+    .edit-btn:hover { background: #0ea5e9; color: #fff; border-color: #0ea5e9; }
+    .del-btn {
+      width: 34px; height: 34px; border-radius: 9px;
+      background: #fff5f5; border: 1px solid #fecaca;
+      color: #ef4444; cursor: pointer; display: flex;
+      align-items: center; justify-content: center; font-size: 13px;
+      transition: all .2s;
+    }
+    .del-btn:hover { background: #ef4444; color: #fff; border-color: #ef4444; }
+
+    /* availability toggle */
+    .avail-toggle { position: relative; display: inline-flex; align-items: center; cursor: pointer; }
+    .avail-toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .avail-slider {
+      width: 38px; height: 22px; background: #cbd5e1; border-radius: 11px;
+      transition: background .2s; position: relative;
+    }
+    .avail-slider::after {
+      content: ''; position: absolute; top: 3px; left: 3px;
+      width: 16px; height: 16px; background: #fff; border-radius: 50%;
+      transition: left .2s;
+    }
+    .avail-toggle input:checked + .avail-slider { background: #22c55e; }
+    .avail-toggle input:checked + .avail-slider::after { left: 19px; }
+
+    /* category badge */
+    .cat-badge {
+      display: inline-block; font-size: 10px; font-weight: 700;
+      text-transform: uppercase; padding: 2px 9px; border-radius: 20px; letter-spacing: .4px;
+    }
+    .cat-breakfast { background: #fef3c7; color: #92400e; }
+    .cat-lunch     { background: #dcfce7; color: #166534; }
+    .cat-snacks    { background: #fee2e2; color: #991b1b; }
+    .cat-drinks    { background: #e0f2fe; color: #0c4a6e; }
+
+    /* ── FAB ── */
+    .fab {
+      position: fixed; bottom: 24px; right: 20px;
+      width: 56px; height: 56px; border-radius: 50%;
+      background: #0ea5e9; color: #fff; border: none;
+      font-size: 22px; cursor: pointer;
+      box-shadow: 0 8px 24px rgba(14,165,233,.45);
+      display: flex; align-items: center; justify-content: center;
+      transition: all .2s; z-index: 50;
+    }
+    .fab:hover { background: #0284c7; transform: scale(1.07); }
+
+    /* ── Modal overlay ── */
+    .modal-bg {
+      position: fixed; inset: 0; background: rgba(0,0,0,.5);
+      z-index: 200; display: flex; align-items: flex-end;
+      justify-content: center; opacity: 0; pointer-events: none;
+      transition: opacity .25s; backdrop-filter: blur(4px);
+    }
+    .modal-bg.open { opacity: 1; pointer-events: all; }
+    @media(min-width:600px) {
+      .modal-bg { align-items: center; }
+    }
+
+    .modal-box {
+      background: #fff; border-radius: 24px 24px 0 0;
+      width: 100%; max-width: 560px; max-height: 92vh;
+      overflow-y: auto; padding: 24px 20px 32px;
+      transform: translateY(60px);
+      transition: transform .3s cubic-bezier(.34,1.56,.64,1);
+    }
+    .modal-bg.open .modal-box { transform: translateY(0); }
+    @media(min-width:600px) {
+      .modal-box { border-radius: 24px; max-height: 88vh; }
+    }
+
+    .form-label { font-size: 13px; font-weight: 600; color: #334155; display: block; margin-bottom: 6px; }
+    .form-input, .form-select, .form-textarea {
+      width: 100%; padding: 11px 14px;
+      border: 2px solid #e0f2fe; border-radius: 12px;
+      font-family: 'Poppins', sans-serif; font-size: 14px;
+      outline: none; transition: border-color .2s; color: #1e293b;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: #0ea5e9; }
+    .form-textarea { resize: vertical; min-height: 80px; }
+    .form-group { margin-bottom: 16px; }
+
+    .img-preview {
+      width: 100%; height: 120px; border-radius: 12px;
+      object-fit: cover; border: 2px solid #e0f2fe;
+      display: none; margin-top: 8px;
+    }
+    .img-preview.show { display: block; }
+
+    .tag-check { display: flex; align-items: center; gap: 8px; font-size: 13.5px; color: #475569; cursor: pointer; padding: 4px 0; }
+    .tag-check input[type=checkbox] { width: 17px; height: 17px; accent-color: #0ea5e9; cursor: pointer; }
+
+    .save-btn {
+      width: 100%; padding: 13px; background: #0ea5e9; color: #fff;
+      border: none; border-radius: 30px; font-size: 14.5px; font-weight: 700;
+      cursor: pointer; font-family: 'Poppins', sans-serif;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: background .2s; margin-top: 8px;
+    }
+    .save-btn:hover { background: #0284c7; }
+    .save-btn:disabled { background: #7dd3fc; cursor: not-allowed; }
+    .cancel-btn {
+      width: 100%; padding: 11px; background: transparent; color: #94a3b8;
+      border: 2px solid #e0f2fe; border-radius: 30px; font-size: 14px;
+      cursor: pointer; font-family: 'Poppins', sans-serif; margin-top: 8px;
+      transition: all .2s;
+    }
+    .cancel-btn:hover { border-color: #fecaca; color: #ef4444; }
+
+    /* ── Delete confirm modal ── */
+    .del-modal-box {
+      background: #fff; border-radius: 20px; padding: 28px 24px;
+      max-width: 360px; width: 90%; text-align: center;
+      transform: scale(.8); transition: transform .3s cubic-bezier(.34,1.56,.64,1);
+    }
+    .modal-bg.open .del-modal-box { transform: scale(1); }
+
+    /* ── Toast ── */
+    #adminToast {
+      position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(30px);
+      background: #0f172a; color: #fff; padding: 11px 20px;
+      border-radius: 30px; font-size: 13.5px; font-weight: 500;
+      z-index: 999; opacity: 0; transition: all .3s;
+      white-space: nowrap; pointer-events: none;
+      display: flex; align-items: center; gap: 8px;
+    }
+    #adminToast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── Seed section ── */
+    .seed-box {
+      background: #fff; border: 2px dashed #bae6fd; border-radius: 18px;
+      padding: 28px 20px; text-align: center; margin-bottom: 22px;
+    }
+
+    /* ── Empty state ── */
+    .empty-state { text-align: center; padding: 48px 20px; color: #94a3b8; }
+    .empty-state i { font-size: 2.8rem; color: #cbd5e1; display: block; margin-bottom: 10px; }
+
+    /* scrollbar */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-thumb { background: #bae6fd; border-radius: 4px; }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════
+     TOAST
+══════════════════════════════════════════════════════ -->
+<div id="adminToast">
+  <i class="fas fa-check-circle" style="color:#4ade80"></i>
+  <span id="toastMsg">Done!</span>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     LOGIN SCREEN
+══════════════════════════════════════════════════════ -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div style="text-align:center;margin-bottom:28px">
+      <div style="width:54px;height:54px;background:#0ea5e9;border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:22px;color:#fff">
+        <i class="fas fa-utensils"></i>
+      </div>
+      <h1 style="font-size:1.5rem;font-weight:900;color:#0f172a">FORZA Admin</h1>
+      <p style="font-size:13px;color:#94a3b8;margin-top:4px">Menu Management Dashboard</p>
+    </div>
+
+    <form id="loginForm">
+      <input class="login-input" type="email" id="adminEmail" placeholder="Email address" required autocomplete="email" />
+      <input class="login-input" type="password" id="adminPassword" placeholder="Password" required autocomplete="current-password" />
+      <p id="loginError" style="font-size:12.5px;color:#ef4444;margin-bottom:12px;display:none"></p>
+      <button class="login-btn" type="submit" id="loginBtn">
+        <i class="fas fa-sign-in-alt"></i> Login
+      </button>
+    </form>
+
+    <p style="text-align:center;font-size:12px;color:#94a3b8;margin-top:20px">
+      Admin access only &nbsp;•&nbsp; <a href="index.html" style="color:#0ea5e9;text-decoration:none">← Back to site</a>
+    </p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     DASHBOARD
+══════════════════════════════════════════════════════ -->
+<div id="dashboard">
+
+  <!-- Header -->
+  <div id="appHeader">
+    <div class="h-logo">
+      <div class="h-plate"><i class="fas fa-utensils"></i></div>
+      <div>
+        <p style="font-size:13.5px;font-weight:800;color:#0f172a;line-height:1">FORZA Admin</p>
+        <p id="userEmail" style="font-size:11px;color:#94a3b8;line-height:1;margin-top:1px"></p>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <a href="index.html" style="font-size:12px;color:#0ea5e9;text-decoration:none;padding:7px 14px;border:2px solid #e0f2fe;border-radius:30px;font-weight:600">
+        <i class="fas fa-eye"></i> View Site
+      </a>
+      <button class="logout-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+    </div>
+  </div>
+
+  <div class="main-wrap">
+
+    <!-- Stats -->
+    <div id="statsBar" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px">
+      <div class="stat-card"><div class="num" id="statAll">0</div><div class="lbl">Total Items</div></div>
+      <div class="stat-card"><div class="num" id="statBf">0</div><div class="lbl">Breakfast</div></div>
+      <div class="stat-card"><div class="num" id="statLunch">0</div><div class="lbl">Lunch</div></div>
+      <div class="stat-card"><div class="num" id="statSnacks">0</div><div class="lbl">Snacks</div></div>
+      <div class="stat-card"><div class="num" id="statDrinks">0</div><div class="lbl">Drinks</div></div>
+    </div>
+
+    <!-- Seed prompt (shown when no items in DB) -->
+    <div class="seed-box" id="seedBox" style="display:none">
+      <i class="fas fa-database" style="font-size:2rem;color:#7dd3fc;margin-bottom:10px;display:block"></i>
+      <h3 style="font-size:15px;font-weight:700;color:#0f172a;margin-bottom:6px">Database is empty</h3>
+      <p style="font-size:13px;color:#64748b;margin-bottom:18px">Load all 20 original menu items into your database to get started quickly.</p>
+      <button onclick="seedData()" style="background:#0ea5e9;color:#fff;border:none;padding:11px 28px;border-radius:30px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif">
+        <i class="fas fa-magic"></i> Seed Sample Data
+      </button>
+    </div>
+
+    <!-- Filter tabs & search -->
+    <div style="margin-bottom:16px">
+      <div style="display:flex;gap:8px;flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;margin-bottom:12px;-webkit-overflow-scrolling:touch">
+        <button class="ftab on" data-tab="all">All</button>
+        <button class="ftab" data-tab="breakfast">🌅 Breakfast</button>
+        <button class="ftab" data-tab="lunch">🍽️ Lunch</button>
+        <button class="ftab" data-tab="snacks">🍟 Snacks</button>
+        <button class="ftab" data-tab="drinks">🥤 Drinks</button>
+      </div>
+      <div style="position:relative">
+        <i class="fas fa-search" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:13px"></i>
+        <input id="adminSearch" type="text" placeholder="Search items…"
+          style="width:100%;padding:11px 14px 11px 38px;border:2px solid #e0f2fe;border-radius:30px;outline:none;font-family:'Poppins',sans-serif;font-size:13.5px;transition:border-color .2s"
+          onfocus="this.style.borderColor='#0ea5e9'" onblur="this.style.borderColor='#e0f2fe'" />
+      </div>
+    </div>
+
+    <!-- Items list -->
+    <div id="itemsList" style="display:flex;flex-direction:column;gap:10px"></div>
+
+  </div><!-- /main-wrap -->
+
+  <!-- Floating Add button -->
+  <button class="fab" id="fabBtn" title="Add new item"><i class="fas fa-plus"></i></button>
+
+</div><!-- /dashboard -->
+
+
+<!-- ══════════════════════════════════════════════════════
+     ADD / EDIT MODAL
+══════════════════════════════════════════════════════ -->
+<div class="modal-bg" id="itemModal">
+  <div class="modal-box">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <h2 id="modalTitle" style="font-size:17px;font-weight:800;color:#0f172a">Add New Item</h2>
+      <button onclick="closeModal()" style="width:32px;height:32px;border-radius:50%;border:1px solid #e0f2fe;background:#fff;color:#64748b;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <form id="itemForm">
+      <!-- Name -->
+      <div class="form-group">
+        <label class="form-label">Item Name *</label>
+        <input class="form-input" type="text" id="fName" placeholder="e.g. Jollof Rice + Chicken" required />
+      </div>
+
+      <!-- Category -->
+      <div class="form-group">
+        <label class="form-label">Category *</label>
+        <select class="form-select" id="fCat" required>
+          <option value="">— Select category —</option>
+          <option value="breakfast">🌅 Breakfast</option>
+          <option value="lunch">🍽️ Lunch</option>
+          <option value="snacks">🍟 Snacks</option>
+          <option value="drinks">🥤 Drinks</option>
+        </select>
+      </div>
+
+      <!-- Price -->
+      <div class="form-group">
+        <label class="form-label">Price (₦) *</label>
+        <input class="form-input" type="number" id="fPrice" placeholder="e.g. 800" min="1" required />
+      </div>
+
+      <!-- Description -->
+      <div class="form-group">
+        <label class="form-label">Description *</label>
+        <textarea class="form-textarea" id="fDesc" placeholder="Short description of the item…" required></textarea>
+      </div>
+
+      <!-- Image URL -->
+      <div class="form-group">
+        <label class="form-label">
+          Image URL *
+          <span style="font-weight:400;color:#94a3b8;font-size:11.5px"> — paste any image link</span>
+        </label>
+        <input class="form-input" type="url" id="fImg" placeholder="https://..." required />
+        <img id="imgPreview" class="img-preview" alt="Image preview" onerror="this.style.display='none'" />
+      </div>
+
+      <!-- Calories -->
+      <div class="form-group">
+        <label class="form-label">Calories <span style="font-weight:400;color:#94a3b8">(optional)</span></label>
+        <input class="form-input" type="number" id="fCal" placeholder="e.g. 650" min="0" />
+      </div>
+
+      <!-- Tags -->
+      <div class="form-group">
+        <label class="form-label">Tags <span style="font-weight:400;color:#94a3b8">(select all that apply)</span></label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">
+          <label class="tag-check"><input type="checkbox" id="tPopular" value="popular"> 🔥 Popular</label>
+          <label class="tag-check"><input type="checkbox" id="tVeg"     value="veg">     🌿 Vegetarian</label>
+          <label class="tag-check"><input type="checkbox" id="tNew"     value="new">     ✨ New</label>
+          <label class="tag-check"><input type="checkbox" id="tSpicy"   value="spicy">   🌶 Spicy</label>
+        </div>
+      </div>
+
+      <!-- Available toggle -->
+      <div class="form-group" style="display:flex;align-items:center;justify-content:space-between;background:#f8fafc;border-radius:12px;padding:13px 16px">
+        <div>
+          <p style="font-size:13.5px;font-weight:600;color:#1e293b">Available on menu</p>
+          <p style="font-size:12px;color:#94a3b8">Toggle off to hide item without deleting</p>
+        </div>
+        <label class="avail-toggle">
+          <input type="checkbox" id="fAvail" checked />
+          <span class="avail-slider"></span>
+        </label>
+      </div>
+
+      <button class="save-btn" type="submit" id="saveBtn">
+        <i class="fas fa-save"></i> <span id="saveBtnTxt">Save Item</span>
+      </button>
+      <button class="cancel-btn" type="button" onclick="closeModal()">Cancel</button>
+    </form>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════
+     DELETE CONFIRM MODAL
+══════════════════════════════════════════════════════ -->
+<div class="modal-bg" id="deleteModal">
+  <div class="del-modal-box">
+    <div style="width:58px;height:58px;border-radius:50%;background:#fee2e2;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:1.5rem;color:#ef4444">
+      <i class="fas fa-trash-alt"></i>
+    </div>
+    <h3 style="font-size:16px;font-weight:800;color:#0f172a;margin-bottom:7px">Delete Item?</h3>
+    <p id="deleteItemName" style="font-size:13px;color:#64748b;margin-bottom:20px"></p>
+    <div style="display:flex;gap:10px">
+      <button onclick="closeDeleteModal()" style="flex:1;padding:11px;border:2px solid #e0f2fe;background:#fff;border-radius:30px;font-size:13.5px;font-weight:600;cursor:pointer;color:#64748b;font-family:'Poppins',sans-serif">
+        Cancel
+      </button>
+      <button id="confirmDeleteBtn" style="flex:1;padding:11px;background:#ef4444;border:none;border-radius:30px;font-size:13.5px;font-weight:700;cursor:pointer;color:#fff;font-family:'Poppins',sans-serif">
+        Delete
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════════════════ -->
+<script>
+  const db   = firebase.firestore();
+  const auth = firebase.auth();
+
+  let allItems   = [];
+  let activeTab  = 'all';
+  let searchQ    = '';
+  let editingId  = null;
+  let deletingId = null;
+  let toastTimer;
+
+  /* ── Seed data (original 20 items) ─────────────────── */
+  const SEED_ITEMS = [
+    { name:'Power Breakfast Set',   cat:'breakfast', price:600,  img:'https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?w=400&q=80', desc:'Scrambled eggs, toast, baked beans & fresh OJ',                  tags:['popular'], cal:580,  available:true },
+    { name:'Bread & Fried Egg',     cat:'breakfast', price:300,  img:'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400&q=80', desc:'Buttered sliced bread with a perfectly fried egg',                tags:['popular'], cal:320,  available:true },
+    { name:'Ogi & Akara',           cat:'breakfast', price:350,  img:'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=400&q=80', desc:'Traditional corn porridge with crispy bean cakes',               tags:['veg'],     cal:420,  available:true },
+    { name:'Pancake Stack',         cat:'breakfast', price:450,  img:'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=400&q=80', desc:'Fluffy golden pancakes with maple syrup & fresh fruit',          tags:['new'],     cal:490,  available:true },
+    { name:'Jollof Rice + Chicken', cat:'lunch',     price:800,  img:'https://images.unsplash.com/photo-1574484284002-952d92456975?w=400&q=80', desc:'Smoky party jollof with grilled chicken, plantain & salad',     tags:['popular'], cal:750,  available:true },
+    { name:'Fried Rice + Fish',     cat:'lunch',     price:750,  img:'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400&q=80', desc:'Colourful fried rice with crispy tilapia fillet',               tags:['popular'], cal:700,  available:true },
+    { name:'Egusi Soup + Fufu',     cat:'lunch',     price:700,  img:'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&q=80', desc:'Rich melon seed soup with freshly pounded fufu',                tags:['veg'],     cal:680,  available:true },
+    { name:'Beans & Plantain',      cat:'lunch',     price:500,  img:'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&q=80', desc:'Honey beans stew with perfectly fried sweet plantain',          tags:['veg','popular'], cal:560, available:true },
+    { name:'Chicken Pasta',         cat:'lunch',     price:650,  img:'https://images.unsplash.com/photo-1551892374-ecf8754cf8b0?w=400&q=80', desc:'Creamy chicken pasta with veggies & garlic bread',              tags:['new'],     cal:720,  available:true },
+    { name:'Pepper Soup + Rice',    cat:'lunch',     price:750,  img:'https://images.unsplash.com/photo-1574484284002-952d92456975?w=400&q=80', desc:'Spicy catfish pepper soup with white basmati rice',             tags:['spicy'],   cal:640,  available:true },
+    { name:'Spring Rolls (4pcs)',   cat:'snacks',    price:300,  img:'https://images.unsplash.com/photo-1548196132-baaac14e65ea?w=400&q=80', desc:'Crispy golden spring rolls with sweet chilli dip',              tags:['popular'], cal:280,  available:true },
+    { name:'Meat Pie',              cat:'snacks',    price:200,  img:'https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=400&q=80', desc:'Flaky pastry filled with seasoned minced beef & veggies',       tags:['popular'], cal:320,  available:true },
+    { name:'Puff Puff (5pcs)',      cat:'snacks',    price:150,  img:'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=400&q=80', desc:'Soft fluffy fried dough — the ultimate school snack!',          tags:['popular'], cal:240,  available:true },
+    { name:'Chicken Shawarma',      cat:'snacks',    price:400,  img:'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=400&q=80', desc:'Loaded wrap with grilled chicken, veggies & garlic sauce',     tags:['new'],     cal:480,  available:true },
+    { name:'Sausage Roll',          cat:'snacks',    price:150,  img:'https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=400&q=80', desc:'Golden pastry wrapped around a juicy pork sausage',            tags:[],          cal:220,  available:true },
+    { name:'Bottled Water',         cat:'drinks',    price:100,  img:'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=400&q=80', desc:'Ice-cold pure mineral water, 75cl',                             tags:[],          cal:0,    available:true },
+    { name:'Soft Drink',            cat:'drinks',    price:250,  img:'https://images.unsplash.com/photo-1527960669566-f882ba85a4c9?w=400&q=80', desc:'Chilled Coke, Fanta, or Sprite — your choice!',                tags:['popular'], cal:140,  available:true },
+    { name:'Zobo Drink',            cat:'drinks',    price:200,  img:'https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?w=400&q=80', desc:'Refreshing hibiscus drink made fresh every morning',           tags:['veg','new'], cal:60, available:true },
+    { name:'Chapman',               cat:'drinks',    price:350,  img:'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=400&q=80', desc:'Classic Nigerian chapman — fruity & refreshing',                tags:['popular'], cal:180,  available:true },
+    { name:'Fresh Fruit Juice',     cat:'drinks',    price:400,  img:'https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?w=400&q=80', desc:'100% freshly squeezed orange or watermelon juice',             tags:['new','veg'], cal:90, available:true },
+  ];
+
+  async function seedData() {
+    const btn = event.target;
+    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Seeding…';
+    const batch = db.batch();
+    SEED_ITEMS.forEach(item => {
+      const ref = db.collection('menuItems').doc();
+      batch.set(ref, { ...item, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+    });
+    await batch.commit();
+    showToast('✅ 20 items added to database!');
+  }
+
+  /* ── Toast ─────────────────────────────────────────── */
+  function showToast(msg) {
+    const el = document.getElementById('adminToast');
+    document.getElementById('toastMsg').textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
+  }
+
+  /* ── Auth state ─────────────────────────────────────── */
+  auth.onAuthStateChanged(user => {
+    if (user) {
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('dashboard').style.display   = 'block';
+      document.getElementById('userEmail').textContent     = user.email;
+      loadItems();
+    } else {
+      document.getElementById('loginScreen').style.display = 'flex';
+      document.getElementById('dashboard').style.display   = 'none';
+    }
+  });
+
+  /* ── Login ──────────────────────────────────────────── */
+  document.getElementById('loginForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const btn = document.getElementById('loginBtn');
+    const errEl = document.getElementById('loginError');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in…';
+    errEl.style.display = 'none';
+    try {
+      await auth.signInWithEmailAndPassword(
+        document.getElementById('adminEmail').value.trim(),
+        document.getElementById('adminPassword').value
+      );
+    } catch {
+      errEl.textContent = 'Incorrect email or password. Try again.';
+      errEl.style.display = 'block';
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login';
+    }
+  });
+
+  /* ── Logout ─────────────────────────────────────────── */
+  document.getElementById('logoutBtn').addEventListener('click', () => auth.signOut());
+
+  /* ── Load items (realtime) ──────────────────────────── */
+  function loadItems() {
+    db.collection('menuItems').orderBy('cat').onSnapshot(snapshot => {
+      allItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      updateStats();
+      filterItems();
+      document.getElementById('seedBox').style.display = allItems.length === 0 ? 'block' : 'none';
+    });
+  }
+
+  /* ── Stats ──────────────────────────────────────────── */
+  function updateStats() {
+    document.getElementById('statAll').textContent    = allItems.length;
+    document.getElementById('statBf').textContent     = allItems.filter(i => i.cat === 'breakfast').length;
+    document.getElementById('statLunch').textContent  = allItems.filter(i => i.cat === 'lunch').length;
+    document.getElementById('statSnacks').textContent = allItems.filter(i => i.cat === 'snacks').length;
+    document.getElementById('statDrinks').textContent = allItems.filter(i => i.cat === 'drinks').length;
+  }
+
+  /* ── Filter & render ────────────────────────────────── */
+  function filterItems() {
+    let list = allItems;
+    if (activeTab !== 'all') list = list.filter(i => i.cat === activeTab);
+    if (searchQ) list = list.filter(i => i.name.toLowerCase().includes(searchQ));
+    renderItems(list);
+  }
+
+  const catLabel = { breakfast:'Breakfast', lunch:'Lunch', snacks:'Snacks', drinks:'Drinks' };
+  const catEmoji = { breakfast:'🌅', lunch:'🍽️', snacks:'🍟', drinks:'🥤' };
+
+  function renderItems(list) {
+    const el = document.getElementById('itemsList');
+    if (!list.length) {
+      el.innerHTML = '<div class="empty-state"><i class="fas fa-search"></i><p class="font-semibold" style="font-size:15px">No items found</p></div>';
+      return;
+    }
+    el.innerHTML = list.map(item => `
+      <div class="item-card" style="${!item.available ? 'opacity:.5' : ''}">
+        ${item.img
+          ? `<img class="item-thumb" src="${item.img}" alt="${item.name}"
+               onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+          : ''}
+        <div class="item-thumb-placeholder" ${item.img ? 'style="display:none"' : ''}>
+          <i class="fas fa-utensils"></i>
+        </div>
+        <div class="item-info">
+          <p class="item-name" title="${item.name}">${item.name}</p>
+          <p class="item-meta">
+            <span class="cat-badge cat-${item.cat}">${catEmoji[item.cat] || ''} ${catLabel[item.cat] || item.cat}</span>
+            ${!item.available ? '<span style="font-size:10px;color:#ef4444;font-weight:700;margin-left:5px">HIDDEN</span>' : ''}
+          </p>
+          <p class="item-price">₦${Number(item.price).toLocaleString()}</p>
+        </div>
+        <div class="item-actions">
+          <button class="edit-btn" onclick="openEdit('${item.id}')" title="Edit">
+            <i class="fas fa-pen"></i>
+          </button>
+          <button class="del-btn" onclick="openDeleteModal('${item.id}','${item.name.replace(/'/g,"\\'")}') " title="Delete">
+            <i class="fas fa-trash-alt"></i>
+          </button>
+          <label class="avail-toggle" title="${item.available ? 'Hide item' : 'Show item'}">
+            <input type="checkbox" ${item.available ? 'checked' : ''}
+              onchange="toggleAvail('${item.id}', this.checked)">
+            <span class="avail-slider"></span>
+          </label>
+        </div>
+      </div>`).join('');
+  }
+
+  /* ── Toggle availability ────────────────────────────── */
+  async function toggleAvail(id, val) {
+    await db.collection('menuItems').doc(id).update({ available: val });
+    showToast(val ? 'Item is now visible on menu' : 'Item hidden from menu');
+  }
+
+  /* ── Tab filter ─────────────────────────────────────── */
+  document.querySelectorAll('.ftab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.ftab').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on');
+      activeTab = btn.dataset.tab;
+      filterItems();
+    });
+  });
+
+  /* ── Search ─────────────────────────────────────────── */
+  document.getElementById('adminSearch').addEventListener('input', e => {
+    searchQ = e.target.value.toLowerCase().trim();
+    filterItems();
+  });
+
+  /* ── Add new item ───────────────────────────────────── */
+  document.getElementById('fabBtn').addEventListener('click', openAdd);
+
+  function openAdd() {
+    editingId = null;
+    document.getElementById('modalTitle').textContent  = 'Add New Item';
+    document.getElementById('saveBtnTxt').textContent  = 'Add Item';
+    document.getElementById('itemForm').reset();
+    document.getElementById('fAvail').checked = true;
+    document.getElementById('imgPreview').classList.remove('show');
+    document.getElementById('itemModal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  /* ── Edit item ──────────────────────────────────────── */
+  function openEdit(id) {
+    const item = allItems.find(i => i.id === id);
+    if (!item) return;
+    editingId = id;
+    document.getElementById('modalTitle').textContent = 'Edit Item';
+    document.getElementById('saveBtnTxt').textContent = 'Save Changes';
+    document.getElementById('fName').value  = item.name  || '';
+    document.getElementById('fCat').value   = item.cat   || '';
+    document.getElementById('fPrice').value = item.price || '';
+    document.getElementById('fDesc').value  = item.desc  || '';
+    document.getElementById('fImg').value   = item.img   || '';
+    document.getElementById('fCal').value   = item.cal   || '';
+    document.getElementById('fAvail').checked = item.available !== false;
+    document.getElementById('tPopular').checked = (item.tags || []).includes('popular');
+    document.getElementById('tVeg').checked     = (item.tags || []).includes('veg');
+    document.getElementById('tNew').checked     = (item.tags || []).includes('new');
+    document.getElementById('tSpicy').checked   = (item.tags || []).includes('spicy');
+    const prev = document.getElementById('imgPreview');
+    if (item.img) { prev.src = item.img; prev.classList.add('show'); }
+    else { prev.classList.remove('show'); }
+    document.getElementById('itemModal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  /* ── Image URL preview ──────────────────────────────── */
+  document.getElementById('fImg').addEventListener('input', e => {
+    const prev = document.getElementById('imgPreview');
+    const url  = e.target.value.trim();
+    if (url) { prev.src = url; prev.classList.add('show'); }
+    else { prev.classList.remove('show'); }
+  });
+
+  /* ── Save (add or update) ───────────────────────────── */
+  document.getElementById('itemForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const btn = document.getElementById('saveBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
+
+    const tags = [];
+    if (document.getElementById('tPopular').checked) tags.push('popular');
+    if (document.getElementById('tVeg').checked)     tags.push('veg');
+    if (document.getElementById('tNew').checked)     tags.push('new');
+    if (document.getElementById('tSpicy').checked)   tags.push('spicy');
+
+    const data = {
+      name:      document.getElementById('fName').value.trim(),
+      cat:       document.getElementById('fCat').value,
+      price:     Number(document.getElementById('fPrice').value),
+      desc:      document.getElementById('fDesc').value.trim(),
+      img:       document.getElementById('fImg').value.trim(),
+      cal:       Number(document.getElementById('fCal').value) || 0,
+      tags,
+      available: document.getElementById('fAvail').checked,
+    };
+
+    try {
+      if (editingId) {
+        await db.collection('menuItems').doc(editingId).update(data);
+        showToast('✅ Item updated!');
+      } else {
+        await db.collection('menuItems').add({ ...data, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+        showToast('✅ Item added to menu!');
+      }
+      closeModal();
+    } catch (err) {
+      showToast('❌ Error saving. Check your connection.');
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-save"></i> <span id="saveBtnTxt">' + (editingId ? 'Save Changes' : 'Add Item') + '</span>';
+  });
+
+  /* ── Close form modal ───────────────────────────────── */
+  function closeModal() {
+    document.getElementById('itemModal').classList.remove('open');
+    document.body.style.overflow = '';
+    editingId = null;
+  }
+
+  /* ── Delete modal ───────────────────────────────────── */
+  function openDeleteModal(id, name) {
+    deletingId = id;
+    document.getElementById('deleteItemName').textContent = `"${name}" will be permanently removed.`;
+    document.getElementById('deleteModal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.remove('open');
+    document.body.style.overflow = '';
+    deletingId = null;
+  }
+
+  document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
+    if (!deletingId) return;
+    await db.collection('menuItems').doc(deletingId).delete();
+    showToast('🗑️ Item deleted');
+    closeDeleteModal();
+  });
+
+  /* close modals on background click */
+  document.getElementById('itemModal').addEventListener('click', e => {
+    if (e.target === document.getElementById('itemModal')) closeModal();
+  });
+  document.getElementById('deleteModal').addEventListener('click', e => {
+    if (e.target === document.getElementById('deleteModal')) closeDeleteModal();
+  });
+</script>
+</body>
+</html>

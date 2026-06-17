@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Account — FORZA FOOD HUB</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Poppins','sans-serif'] } } } }</script>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'Poppins', sans-serif; background: #f0f9ff; }
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-thumb { background: #0ea5e9; border-radius: 4px; }
+
+    /* Header */
+    .pg-hdr {
+      background: #fff; border-bottom: 1px solid #e0f2fe;
+      position: sticky; top: 0; z-index: 50;
+      box-shadow: 0 2px 12px rgba(14,165,233,.08);
+    }
+    .pg-hdr-inner {
+      max-width: 1100px; margin: 0 auto;
+      padding: 0 24px; height: 64px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .logo-link { display:flex; align-items:center; gap:10px; text-decoration:none; }
+    .logo-plate { width:36px; height:36px; background:#0ea5e9; border-radius:9px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:14px; }
+    .logo-txt { font-size:1.15rem; font-weight:900; color:#0f172a; }
+    .back-btn {
+      display: inline-flex; align-items: center; gap: 7px;
+      background: #f0f9ff; color: #0ea5e9; border: 1.5px solid #bae6fd;
+      border-radius: 8px; padding: 7px 15px; font-size: 13px;
+      font-weight: 600; text-decoration: none; transition: all .2s;
+    }
+    .back-btn:hover { background: #0ea5e9; color: #fff; border-color: #0ea5e9; }
+
+    /* Page wrapper */
+    .pg-wrap { max-width: 980px; margin: 0 auto; padding: 36px 24px 60px; }
+
+    /* Stats cards */
+    .stat-card {
+      background: #fff; border-radius: 14px; padding: 22px 20px;
+      border: 1px solid #e0f2fe; text-align: center;
+      box-shadow: 0 2px 10px rgba(14,165,233,.06);
+    }
+    .stat-icon {
+      width: 48px; height: 48px; border-radius: 50%;
+      background: #e0f2fe; color: #0ea5e9;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; margin: 0 auto 11px;
+    }
+    .stat-val { font-size: 1.7rem; font-weight: 800; color: #0f172a; line-height: 1; }
+    .stat-lbl { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+
+    /* Profile card */
+    .card {
+      background: #fff; border-radius: 16px;
+      border: 1px solid #e0f2fe; overflow: hidden;
+      box-shadow: 0 2px 12px rgba(14,165,233,.07);
+    }
+    .card-head {
+      padding: 18px 24px; border-bottom: 1px solid #f0f9ff;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .card-head h2 { font-size: 15px; font-weight: 700; color: #0f172a; }
+    .card-body { padding: 24px; }
+
+    /* Avatar */
+    .avatar-ring {
+      width: 88px; height: 88px; border-radius: 50%;
+      background: linear-gradient(135deg,#0284c7,#0ea5e9);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 2rem; font-weight: 800;
+      border: 4px solid #e0f2fe; position: relative; flex-shrink: 0;
+    }
+    .avatar-badge {
+      position: absolute; bottom: 2px; right: 2px;
+      width: 20px; height: 20px; border-radius: 50%;
+      background: #22c55e; border: 2px solid #fff;
+    }
+
+    /* Form */
+    .form-label { font-size: 12.5px; font-weight: 600; color: #475569; margin-bottom: 6px; display: block; }
+    .form-input {
+      width: 100%; border: 1.5px solid #e0f2fe; border-radius: 9px;
+      padding: 10px 14px; font-family: 'Poppins', sans-serif;
+      font-size: 13.5px; color: #0f172a; outline: none; transition: border .2s;
+      background: #f8fafc;
+    }
+    .form-input:focus { border-color: #0ea5e9; background: #fff; }
+    .form-input[readonly] { background: #f0f9ff; color: #64748b; cursor: default; }
+
+    /* Tabs */
+    .tab-bar { display: flex; gap: 6px; background: #f0f9ff; border-radius: 10px; padding: 5px; margin-bottom: 24px; }
+    .tab-btn {
+      flex: 1; padding: 9px; border-radius: 8px; border: none;
+      font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: all .2s; color: #64748b; background: transparent;
+    }
+    .tab-btn.active { background: #fff; color: #0ea5e9; box-shadow: 0 1px 6px rgba(14,165,233,.15); }
+
+    /* Save button */
+    .btn-sky {
+      background: linear-gradient(135deg,#0284c7,#0ea5e9); color: #fff;
+      border: none; border-radius: 9px; padding: 11px 24px;
+      font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 700;
+      cursor: pointer; transition: opacity .2s;
+    }
+    .btn-sky:hover { opacity: .88; }
+    .btn-outline {
+      background: #fff; color: #0ea5e9; border: 1.5px solid #bae6fd;
+      border-radius: 9px; padding: 10px 20px;
+      font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 600;
+      cursor: pointer; transition: all .2s;
+    }
+    .btn-outline:hover { background: #f0f9ff; }
+
+    /* Toast */
+    #toast {
+      position: fixed; bottom: 28px; right: 28px; z-index: 999;
+      background: #0f172a; color: #fff; border-radius: 12px;
+      padding: 13px 22px; font-size: 13.5px; font-weight: 600;
+      display: flex; align-items: center; gap: 10px;
+      opacity: 0; transform: translateX(90px); pointer-events: none;
+      transition: opacity .3s, transform .3s;
+    }
+    #toast.show { opacity: 1; transform: translateX(0); }
+
+    /* Footer */
+    .pg-footer {
+      background: #0f172a; color: #64748b;
+      text-align: center; padding: 24px;
+      font-size: 12.5px; margin-top: 0;
+    }
+    .pg-footer a { color: #0ea5e9; text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<!-- Toast -->
+<div id="toast"><i class="fas fa-check-circle" style="color:#4ade80"></i><span id="toastMsg"></span></div>
+
+<!-- Header -->
+<header class="pg-hdr">
+  <div class="pg-hdr-inner">
+    <a href="index.html" class="logo-link">
+      <div class="logo-plate"><i class="fas fa-utensils"></i></div>
+      <span class="logo-txt">FORZA</span>
+    </a>
+    <a href="index.html" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Home</a>
+  </div>
+</header>
+
+<!-- Page Content -->
+<div class="pg-wrap">
+
+  <!-- Breadcrumb -->
+  <p style="font-size:12.5px;color:#94a3b8;margin-bottom:22px">
+    <a href="index.html" style="color:#0ea5e9;text-decoration:none">Home</a> &rsaquo; My Account
+  </p>
+
+  <!-- Page Title -->
+  <div style="margin-bottom:28px">
+    <h1 style="font-size:1.7rem;font-weight:900;color:#0f172a;margin:0 0 4px">My Account</h1>
+    <p style="font-size:13.5px;color:#64748b;margin:0">Manage your profile, orders, and preferences.</p>
+  </div>
+
+  <!-- Stats Row -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px" class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon"><i class="fas fa-shopping-bag"></i></div>
+      <div class="stat-val">14</div>
+      <div class="stat-lbl">Total Orders</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon"><i class="fas fa-tags"></i></div>
+      <div class="stat-val">₦2,900</div>
+      <div class="stat-lbl">Total Savings</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#dcfce7;color:#22c55e"><i class="fas fa-calendar-check"></i></div>
+      <div class="stat-val" style="color:#22c55e">Student</div>
+      <div class="stat-lbl">Active Meal Plan</div>
+    </div>
+    <div class="stat-card" style="cursor:pointer" onclick="window.location.href='wallet-topup.html'">
+      <div class="stat-icon" style="background:#ede9fe;color:#7c3aed"><i class="fas fa-wallet"></i></div>
+      <div class="stat-val" style="color:#7c3aed" id="walletStatBal">₦0</div>
+      <div class="stat-lbl">Wallet Balance</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:300px 1fr;gap:20px;align-items:start" class="acc-grid">
+
+    <!-- Left: Profile snapshot -->
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="card">
+        <div class="card-body" style="text-align:center">
+          <div class="avatar-ring" style="margin:0 auto 14px">
+            AO
+            <div class="avatar-badge"></div>
+          </div>
+          <p style="font-size:16px;font-weight:800;color:#0f172a;margin:0 0 3px">Adebayo Oyelaran</p>
+          <p style="font-size:12.5px;color:#94a3b8;margin:0 0 10px">BSc Computer Science · 300 Level</p>
+          <div style="margin-top:16px;padding-top:16px;border-top:1px solid #f0f9ff">
+            <div style="font-size:12px;color:#64748b;margin-bottom:6px">Member since</div>
+            <div style="font-size:13px;font-weight:700;color:#0f172a">September 2024</div>
+          </div>
+          <div style="margin-top:12px;padding-top:12px;border-top:1px solid #f0f9ff">
+            <div style="font-size:12px;color:#64748b;margin-bottom:6px">Student ID</div>
+            <div style="font-size:13px;font-weight:700;color:#0f172a">BU/CSC/2022/0471</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Wallet card -->
+      <div class="card">
+        <div class="card-body">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+            <p style="font-size:13px;font-weight:700;color:#0f172a;margin:0"><i class="fas fa-wallet" style="color:#0ea5e9;margin-right:7px"></i>FORZA Wallet</p>
+            <span style="font-size:10px;background:#dcfce7;color:#16a34a;padding:2px 9px;border-radius:20px;font-weight:700">Active</span>
+          </div>
+          <div style="background:#f0f9ff;border-radius:10px;padding:14px;margin-bottom:12px;text-align:center">
+            <p style="font-size:11px;color:#94a3b8;margin:0 0 4px">Available Balance</p>
+            <p style="font-size:1.7rem;font-weight:900;color:#0ea5e9;margin:0" id="walletCardBal">₦0</p>
+          </div>
+          <a href="wallet-topup.html" style="display:block;width:100%;padding:10px;background:linear-gradient(135deg,#0284c7,#0ea5e9);color:#fff;border-radius:9px;font-size:13px;font-weight:700;text-align:center;text-decoration:none">
+            <i class="fas fa-plus-circle" style="margin-right:6px"></i>Top Up Wallet
+          </a>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-body">
+          <p style="font-size:13px;font-weight:700;color:#0f172a;margin:0 0 12px"><i class="fas fa-map-marker-alt" style="color:#0ea5e9;margin-right:7px"></i>Saved Address</p>
+          <p style="font-size:12.5px;color:#475569;line-height:1.6;margin:0">Block C, Room 14<br>Male Hostel Complex<br>Bowen University, Iwo</p>
+          <button onclick="toast('Address updated!')" class="btn-outline" style="width:100%;margin-top:12px;font-size:12.5px">Change Address</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Tabbed settings -->
+    <div class="card">
+      <div class="card-body">
+        <div class="tab-bar">
+          <button class="tab-btn active" onclick="switchTab('profile',this)">Profile Info</button>
+          <button class="tab-btn" onclick="switchTab('security',this)">Security</button>
+          <button class="tab-btn" onclick="switchTab('notif',this)">Notifications</button>
+        </div>
+
+        <!-- Profile Tab -->
+        <div id="tab-profile">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+            <div>
+              <label class="form-label">First Name</label>
+              <input class="form-input" type="text" value="Adebayo" />
+            </div>
+            <div>
+              <label class="form-label">Last Name</label>
+              <input class="form-input" type="text" value="Oyelaran" />
+            </div>
+            <div>
+              <label class="form-label">Student ID</label>
+              <input class="form-input" type="text" value="BU/CSC/2022/0471" readonly />
+            </div>
+            <div>
+              <label class="form-label">Phone Number</label>
+              <input class="form-input" type="tel" value="+234 812 345 6789" />
+            </div>
+            <div>
+              <label class="form-label">Email Address</label>
+              <input class="form-input" type="email" value="adebayo.oyelaran@bowen.edu.ng" />
+            </div>
+            <div>
+              <label class="form-label">Faculty</label>
+              <input class="form-input" type="text" value="Science & Technology" />
+            </div>
+            <div>
+              <label class="form-label">Department</label>
+              <input class="form-input" type="text" value="Computer Science" />
+            </div>
+            <div>
+              <label class="form-label">Level</label>
+              <select class="form-input" style="appearance:none">
+                <option>100 Level</option>
+                <option>200 Level</option>
+                <option selected>300 Level</option>
+                <option>400 Level</option>
+                <option>500 Level</option>
+              </select>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:22px">
+            <button class="btn-sky" onclick="toast('Profile saved successfully!')">
+              <i class="fas fa-save" style="margin-right:7px"></i>Save Changes
+            </button>
+            <button class="btn-outline">Cancel</button>
+          </div>
+        </div>
+
+        <!-- Security Tab -->
+        <div id="tab-security" style="display:none">
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div>
+              <label class="form-label">Current Password</label>
+              <input class="form-input" type="password" placeholder="Enter current password" />
+            </div>
+            <div>
+              <label class="form-label">New Password</label>
+              <input class="form-input" type="password" placeholder="Enter new password" />
+            </div>
+            <div>
+              <label class="form-label">Confirm New Password</label>
+              <input class="form-input" type="password" placeholder="Repeat new password" />
+            </div>
+            <div style="background:#f0f9ff;border-radius:10px;padding:14px;border:1px solid #bae6fd">
+              <p style="font-size:12.5px;color:#0369a1;margin:0;font-weight:600"><i class="fas fa-shield-alt" style="margin-right:7px"></i>Password requirements</p>
+              <ul style="font-size:12px;color:#475569;margin:8px 0 0 0;padding-left:18px;line-height:1.9">
+                <li>At least 8 characters</li>
+                <li>One uppercase letter</li>
+                <li>One number or symbol</li>
+              </ul>
+            </div>
+          </div>
+          <div style="margin-top:22px">
+            <button class="btn-sky" onclick="toast('Password updated!')">
+              <i class="fas fa-lock" style="margin-right:7px"></i>Update Password
+            </button>
+          </div>
+        </div>
+
+        <!-- Notifications Tab -->
+        <div id="tab-notif" style="display:none">
+          <div style="display:flex;flex-direction:column;gap:0">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid #f0f9ff">
+              <div>
+                <p style="font-size:13.5px;font-weight:600;color:#0f172a;margin:0">Order Updates</p>
+                <p style="font-size:12px;color:#94a3b8;margin:3px 0 0">Get notified when your order status changes</p>
+              </div>
+              <label style="position:relative;width:42px;height:22px;cursor:pointer">
+                <input type="checkbox" checked style="opacity:0;width:0;height:0" />
+                <span onclick="this.style.background=this.style.background==='#0ea5e9'?'#cbd5e1':'#0ea5e9'" style="position:absolute;inset:0;background:#0ea5e9;border-radius:50px;transition:.3s"></span>
+                <span style="position:absolute;top:2px;left:2px;width:18px;height:18px;background:#fff;border-radius:50%;transition:.3s"></span>
+              </label>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid #f0f9ff">
+              <div>
+                <p style="font-size:13.5px;font-weight:600;color:#0f172a;margin:0">Meal Plan Reminders</p>
+                <p style="font-size:12px;color:#94a3b8;margin:3px 0 0">Reminder when your plan is about to expire</p>
+              </div>
+              <label style="position:relative;width:42px;height:22px;cursor:pointer">
+                <input type="checkbox" checked style="opacity:0;width:0;height:0" />
+                <span onclick="this.style.background=this.style.background==='#0ea5e9'?'#cbd5e1':'#0ea5e9'" style="position:absolute;inset:0;background:#0ea5e9;border-radius:50px;transition:.3s"></span>
+                <span style="position:absolute;top:2px;left:2px;width:18px;height:18px;background:#fff;border-radius:50%;transition:.3s"></span>
+              </label>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid #f0f9ff">
+              <div>
+                <p style="font-size:13.5px;font-weight:600;color:#0f172a;margin:0">Daily Specials</p>
+                <p style="font-size:12px;color:#94a3b8;margin:3px 0 0">Get today's specials every morning at 8 AM</p>
+              </div>
+              <label style="position:relative;width:42px;height:22px;cursor:pointer">
+                <input type="checkbox" style="opacity:0;width:0;height:0" />
+                <span onclick="this.style.background=this.style.background==='#0ea5e9'?'#cbd5e1':'#0ea5e9'" style="position:absolute;inset:0;background:#cbd5e1;border-radius:50px;transition:.3s"></span>
+                <span style="position:absolute;top:2px;left:2px;width:18px;height:18px;background:#fff;border-radius:50%;transition:.3s"></span>
+              </label>
+            </div>
+          </div>
+          <div style="margin-top:16px">
+            <button class="btn-sky" onclick="toast('Notification preferences saved!')">
+              <i class="fas fa-save" style="margin-right:7px"></i>Save Preferences
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Footer -->
+<footer class="pg-footer">
+  <p>&copy; 2026 FORZA FOOD HUB · <a href="index.html">Back to Main Site</a> · <a href="faqs.html">FAQs</a></p>
+</footer>
+
+<style>
+  @media(max-width:768px){
+    .stats-grid{grid-template-columns:repeat(2,1fr)!important}
+    .acc-grid{grid-template-columns:1fr!important}
+  }
+  @media(max-width:480px){
+    .stats-grid{grid-template-columns:repeat(2,1fr)!important}
+  }
+</style>
+
+<script>
+  function loadWallet() {
+    const bal = parseInt(localStorage.getItem('forzaWallet') || '0');
+    const fmt = '₦' + bal.toLocaleString();
+    const s = document.getElementById('walletStatBal');
+    const c = document.getElementById('walletCardBal');
+    if (s) s.textContent = fmt;
+    if (c) c.textContent = fmt;
+  }
+  loadWallet();
+
+  function switchTab(name, btn) {
+    document.querySelectorAll('[id^="tab-"]').forEach(t => t.style.display = 'none');
+    document.getElementById('tab-' + name).style.display = 'block';
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+  let toastTimer;
+  function toast(msg) {
+    const t = document.getElementById('toast');
+    document.getElementById('toastMsg').textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+  }
+</script>
+</body>
+</html>

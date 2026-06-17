@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Order History — FORZA FOOD HUB</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Poppins','sans-serif'] } } } }</script>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'Poppins', sans-serif; background: #f0f9ff; }
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-thumb { background: #0ea5e9; border-radius: 4px; }
+
+    .pg-hdr { background:#fff; border-bottom:1px solid #e0f2fe; position:sticky; top:0; z-index:50; box-shadow:0 2px 12px rgba(14,165,233,.08); }
+    .pg-hdr-inner { max-width:1100px; margin:0 auto; padding:0 24px; height:64px; display:flex; align-items:center; justify-content:space-between; }
+    .logo-link { display:flex; align-items:center; gap:10px; text-decoration:none; }
+    .logo-plate { width:36px; height:36px; background:#0ea5e9; border-radius:9px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:14px; }
+    .logo-txt { font-size:1.15rem; font-weight:900; color:#0f172a; }
+    .back-btn { display:inline-flex; align-items:center; gap:7px; background:#f0f9ff; color:#0ea5e9; border:1.5px solid #bae6fd; border-radius:8px; padding:7px 15px; font-size:13px; font-weight:600; text-decoration:none; transition:all .2s; }
+    .back-btn:hover { background:#0ea5e9; color:#fff; border-color:#0ea5e9; }
+    .pg-wrap { max-width:900px; margin:0 auto; padding:36px 24px 60px; }
+
+    /* Filter bar */
+    .filter-bar { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:24px; }
+    .f-btn { padding:8px 18px; border-radius:50px; border:1.5px solid #e0f2fe; font-family:'Poppins',sans-serif; font-size:13px; font-weight:600; cursor:pointer; background:#fff; color:#64748b; transition:all .2s; }
+    .f-btn.active { background:#0ea5e9; color:#fff; border-color:#0ea5e9; }
+    .f-btn:hover:not(.active) { border-color:#7dd3fc; color:#0ea5e9; }
+
+    /* Search */
+    .search-box { position:relative; }
+    .search-box input { border:1.5px solid #e0f2fe; border-radius:9px; padding:9px 14px 9px 38px; font-family:'Poppins',sans-serif; font-size:13px; outline:none; background:#fff; color:#0f172a; width:220px; transition:border .2s; }
+    .search-box input:focus { border-color:#0ea5e9; }
+    .search-box i { position:absolute; left:13px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:13px; }
+
+    /* Order card */
+    .order-card { background:#fff; border-radius:16px; border:1px solid #e0f2fe; margin-bottom:16px; overflow:hidden; box-shadow:0 2px 10px rgba(14,165,233,.06); transition:box-shadow .2s; }
+    .order-card:hover { box-shadow:0 6px 24px rgba(14,165,233,.13); }
+    .order-head { padding:16px 22px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; border-bottom:1px solid #f0f9ff; }
+    .order-id { font-size:13px; font-weight:700; color:#0f172a; }
+    .order-date { font-size:12px; color:#94a3b8; margin-top:2px; }
+    .order-body { padding:16px 22px; }
+    .order-item { display:flex; align-items:center; gap:12px; padding:8px 0; border-bottom:1px solid #f8fafc; }
+    .order-item:last-child { border-bottom:none; }
+    .item-img { width:44px; height:44px; border-radius:10px; object-fit:cover; background:#e0f2fe; flex-shrink:0; }
+    .item-name { font-size:13px; font-weight:600; color:#0f172a; }
+    .item-qty { font-size:12px; color:#94a3b8; }
+    .item-price { font-size:13px; font-weight:700; color:#0ea5e9; margin-left:auto; }
+    .order-foot { padding:12px 22px; background:#f8fafc; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; }
+    .order-total { font-size:14px; font-weight:800; color:#0f172a; }
+
+    /* Status badges */
+    .badge { display:inline-flex; align-items:center; gap:5px; border-radius:50px; padding:4px 12px; font-size:11.5px; font-weight:700; }
+    .badge-delivered { background:#dcfce7; color:#15803d; }
+    .badge-preparing { background:#fef9c3; color:#92400e; }
+    .badge-ready { background:#dbeafe; color:#1d4ed8; }
+    .badge-cancelled { background:#fee2e2; color:#b91c1c; }
+
+    /* Reorder button */
+    .btn-sky { background:linear-gradient(135deg,#0284c7,#0ea5e9); color:#fff; border:none; border-radius:8px; padding:8px 18px; font-family:'Poppins',sans-serif; font-size:12.5px; font-weight:700; cursor:pointer; transition:opacity .2s; }
+    .btn-sky:hover { opacity:.88; }
+    .btn-outline { background:#fff; color:#0ea5e9; border:1.5px solid #bae6fd; border-radius:8px; padding:7px 16px; font-family:'Poppins',sans-serif; font-size:12.5px; font-weight:600; cursor:pointer; transition:all .2s; }
+    .btn-outline:hover { background:#f0f9ff; }
+
+    /* Empty state */
+    .empty { text-align:center; padding:60px 24px; }
+    .empty i { font-size:3rem; color:#bae6fd; margin-bottom:14px; display:block; }
+
+    /* Pagination */
+    .page-btn { width:34px; height:34px; border-radius:8px; border:1.5px solid #e0f2fe; background:#fff; color:#64748b; font-family:'Poppins',sans-serif; font-size:13px; font-weight:600; cursor:pointer; transition:all .2s; display:inline-flex; align-items:center; justify-content:center; }
+    .page-btn.active { background:#0ea5e9; color:#fff; border-color:#0ea5e9; }
+    .page-btn:hover:not(.active) { border-color:#7dd3fc; color:#0ea5e9; }
+
+    /* Toast */
+    #toast { position:fixed; bottom:28px; right:28px; z-index:999; background:#0f172a; color:#fff; border-radius:12px; padding:13px 22px; font-size:13.5px; font-weight:600; display:flex; align-items:center; gap:10px; opacity:0; transform:translateX(90px); pointer-events:none; transition:opacity .3s, transform .3s; }
+    #toast.show { opacity:1; transform:translateX(0); }
+
+    .pg-footer { background:#0f172a; color:#64748b; text-align:center; padding:24px; font-size:12.5px; }
+    .pg-footer a { color:#0ea5e9; text-decoration:none; }
+
+    @media(max-width:600px){
+      .search-box input { width:160px; }
+      .order-head { flex-direction:column; align-items:flex-start; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="toast"><i class="fas fa-check-circle" style="color:#4ade80"></i><span id="toastMsg"></span></div>
+
+<!-- Header -->
+<header class="pg-hdr">
+  <div class="pg-hdr-inner">
+    <a href="index.html" class="logo-link">
+      <div class="logo-plate"><i class="fas fa-utensils"></i></div>
+      <span class="logo-txt">FORZA</span>
+    </a>
+    <a href="index.html" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Home</a>
+  </div>
+</header>
+
+<div class="pg-wrap">
+  <p style="font-size:12.5px;color:#94a3b8;margin-bottom:22px">
+    <a href="index.html" style="color:#0ea5e9;text-decoration:none">Home</a> &rsaquo; Order History
+  </p>
+
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:22px">
+    <div>
+      <h1 style="font-size:1.7rem;font-weight:900;color:#0f172a;margin:0 0 4px">Order History</h1>
+      <p style="font-size:13.5px;color:#64748b;margin:0">All your past and active orders in one place.</p>
+    </div>
+    <a href="index.html#menu" style="background:linear-gradient(135deg,#0284c7,#0ea5e9);color:#fff;border-radius:9px;padding:10px 20px;font-size:13px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:7px">
+      <i class="fas fa-plus"></i> New Order
+    </a>
+  </div>
+
+  <!-- Filters -->
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:22px">
+    <div class="filter-bar">
+      <button class="f-btn active" onclick="filterOrders('all',this)">All Orders <span style="background:#e0f2fe;color:#0369a1;border-radius:50px;padding:1px 8px;font-size:11px;margin-left:4px">8</span></button>
+      <button class="f-btn" onclick="filterOrders('active',this)">Active <span style="background:#fef9c3;color:#92400e;border-radius:50px;padding:1px 8px;font-size:11px;margin-left:4px">2</span></button>
+      <button class="f-btn" onclick="filterOrders('delivered',this)">Delivered</button>
+      <button class="f-btn" onclick="filterOrders('cancelled',this)">Cancelled</button>
+    </div>
+    <div class="search-box">
+      <i class="fas fa-search"></i>
+      <input type="text" placeholder="Search orders…" oninput="searchOrders(this.value)" />
+    </div>
+  </div>
+
+  <!-- Orders List -->
+  <div id="ordersList"></div>
+
+  <!-- Pagination -->
+  <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:24px">
+    <button class="page-btn"><i class="fas fa-chevron-left"></i></button>
+    <button class="page-btn active">1</button>
+    <button class="page-btn">2</button>
+    <button class="page-btn"><i class="fas fa-chevron-right"></i></button>
+  </div>
+</div>
+
+<footer class="pg-footer">
+  <p>&copy; 2026 FORZA FOOD HUB · <a href="index.html">Back to Main Site</a> · <a href="my-account.html">My Account</a></p>
+</footer>
+
+<script>
+  const orders = [
+    {
+      id:'#FZO-20261108', date:'Nov 8, 2026 · 12:34 PM', status:'delivered',
+      items:[
+        { name:'Power Breakfast Set', qty:1, price:600, img:'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=80&q=60' },
+        { name:'Jollof Rice & Chicken', qty:1, price:900, img:'https://images.unsplash.com/photo-1512058564366-18510be2db19?w=80&q=60' },
+        { name:'Zobo Drink', qty:2, price:200, img:'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=80&q=60' },
+      ],
+      discount:170, total:1530
+    },
+    {
+      id:'#FZO-20261106', date:'Nov 6, 2026 · 1:02 PM', status:'delivered',
+      items:[
+        { name:'Moi Moi & Akamu', qty:1, price:450, img:'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=80&q=60' },
+        { name:'Chapman', qty:1, price:350, img:'https://images.unsplash.com/photo-1536935338788-846bb9981813?w=80&q=60' },
+      ],
+      discount:0, total:800
+    },
+    {
+      id:'#FZO-20261105', date:'Nov 5, 2026 · 7:45 AM', status:'preparing',
+      items:[
+        { name:'Egg Sandwich & Tea', qty:2, price:500, img:'https://images.unsplash.com/photo-1528736235302-52922df5c122?w=80&q=60' },
+      ],
+      discount:0, total:1000
+    },
+    {
+      id:'#FZO-20261104', date:'Nov 4, 2026 · 12:55 PM', status:'ready',
+      items:[
+        { name:'Egusi Soup & Eba', qty:1, price:800, img:'https://images.unsplash.com/photo-1512058564366-18510be2db19?w=80&q=60' },
+        { name:'Fresh Fruit Juice', qty:1, price:400, img:'https://images.unsplash.com/photo-1600271886742-f049cd451bba?w=80&q=60' },
+        { name:'Puff Puff (6 pcs)', qty:1, price:300, img:'https://images.unsplash.com/photo-1551024601-bec78aea704b?w=80&q=60' },
+      ],
+      discount:150, total:1350
+    },
+    {
+      id:'#FZO-20261101', date:'Nov 1, 2026 · 2:15 PM', status:'delivered',
+      items:[
+        { name:'Fried Rice & Turkey', qty:1, price:1100, img:'https://images.unsplash.com/photo-1512058564366-18510be2db19?w=80&q=60' },
+        { name:'Kunu', qty:1, price:200, img:'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=80&q=60' },
+      ],
+      discount:130, total:1170
+    },
+    {
+      id:'#FZO-20261029', date:'Oct 29, 2026 · 8:10 AM', status:'cancelled',
+      items:[
+        { name:'Akara & Oat Porridge', qty:1, price:400, img:'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=80&q=60' },
+      ],
+      discount:0, total:400
+    },
+    {
+      id:'#FZO-20261028', date:'Oct 28, 2026 · 12:08 PM', status:'delivered',
+      items:[
+        { name:'Jollof Rice & Chicken', qty:2, price:900, img:'https://images.unsplash.com/photo-1512058564366-18510be2db19?w=80&q=60' },
+        { name:'Chilled Zobo', qty:2, price:200, img:'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=80&q=60' },
+      ],
+      discount:220, total:1980
+    },
+    {
+      id:'#FZO-20261025', date:'Oct 25, 2026 · 1:30 PM', status:'delivered',
+      items:[
+        { name:'Afang Soup & Fufu', qty:1, price:850, img:'https://images.unsplash.com/photo-1512058564366-18510be2db19?w=80&q=60' },
+        { name:'Chin Chin (Pack)', qty:1, price:250, img:'https://images.unsplash.com/photo-1551024601-bec78aea704b?w=80&q=60' },
+      ],
+      discount:115, total:985
+    },
+  ];
+
+  const statusMap = {
+    delivered: { label:'Delivered', cls:'badge-delivered', icon:'fa-check-circle' },
+    preparing: { label:'Preparing', cls:'badge-preparing', icon:'fa-fire' },
+    ready:     { label:'Ready for Pickup', cls:'badge-ready', icon:'fa-bell' },
+    cancelled: { label:'Cancelled', cls:'badge-cancelled', icon:'fa-times-circle' },
+  };
+
+  let activeFilter = 'all', searchVal = '';
+
+  function renderOrders() {
+    let list = orders;
+    if (activeFilter !== 'all') list = list.filter(o => o.status === activeFilter);
+    if (searchVal) list = list.filter(o =>
+      o.id.toLowerCase().includes(searchVal.toLowerCase()) ||
+      o.items.some(i => i.name.toLowerCase().includes(searchVal.toLowerCase()))
+    );
+
+    const el = document.getElementById('ordersList');
+    if (!list.length) {
+      el.innerHTML = `<div class="empty"><i class="fas fa-box-open"></i><p style="font-size:15px;font-weight:700;color:#0f172a">No orders found</p><p style="font-size:13px;color:#94a3b8">Try a different filter or <a href="index.html#menu" style="color:#0ea5e9">order some food</a>!</p></div>`;
+      return;
+    }
+    el.innerHTML = list.map(o => {
+      const s = statusMap[o.status];
+      const itemsHtml = o.items.map(i => `
+        <div class="order-item">
+          <img class="item-img" src="${i.img}" alt="${i.name}" onerror="this.style.background='#e0f2fe';this.removeAttribute('src')" />
+          <div>
+            <div class="item-name">${i.name}</div>
+            <div class="item-qty">Qty: ${i.qty}</div>
+          </div>
+          <div class="item-price">₦${(i.price * i.qty).toLocaleString()}</div>
+        </div>
+      `).join('');
+
+      const discHtml = o.discount ? `<span style="font-size:12px;color:#22c55e;font-weight:600"><i class="fas fa-tag"></i> −₦${o.discount.toLocaleString()} discount</span>` : '';
+      const actionBtn = o.status === 'cancelled'
+        ? `<button class="btn-outline" onclick="reorder('${o.id}')"><i class="fas fa-redo" style="margin-right:6px"></i>Reorder</button>`
+        : o.status === 'delivered'
+        ? `<button class="btn-sky" onclick="reorder('${o.id}')"><i class="fas fa-redo" style="margin-right:6px"></i>Reorder</button>`
+        : `<button class="btn-sky" disabled style="opacity:.6;cursor:default"><i class="fas fa-clock" style="margin-right:6px"></i>In Progress</button>`;
+
+      return `
+        <div class="order-card">
+          <div class="order-head">
+            <div>
+              <div class="order-id">${o.id}</div>
+              <div class="order-date"><i class="fas fa-calendar-alt" style="margin-right:5px"></i>${o.date}</div>
+            </div>
+            <span class="badge ${s.cls}"><i class="fas ${s.icon}"></i> ${s.label}</span>
+          </div>
+          <div class="order-body">${itemsHtml}</div>
+          <div class="order-foot">
+            <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+              ${discHtml}
+              <div class="order-total">Total: ₦${o.total.toLocaleString()}</div>
+            </div>
+            <div style="display:flex;gap:8px">
+              ${actionBtn}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function filterOrders(f, btn) {
+    activeFilter = f;
+    document.querySelectorAll('.f-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderOrders();
+  }
+
+  function searchOrders(v) { searchVal = v; renderOrders(); }
+
+  function reorder(id) {
+    toast(`Reordering ${id}… Redirecting to menu!`);
+    setTimeout(() => window.location.href = 'index.html#menu', 1800);
+  }
+
+  let toastTimer;
+  function toast(msg) {
+    const t = document.getElementById('toast');
+    document.getElementById('toastMsg').textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  renderOrders();
+</script>
+</body>
+</html>
