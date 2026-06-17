@@ -9,6 +9,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
   <script src="firebase-config.js"></script>
 
   <!-- Tailwind CSS -->
@@ -428,13 +429,32 @@
         <textarea class="form-textarea" id="fDesc" placeholder="Short description of the item…" required></textarea>
       </div>
 
-      <!-- Image URL -->
+      <!-- Image -->
       <div class="form-group">
-        <label class="form-label">
-          Image URL *
-          <span style="font-weight:400;color:#94a3b8;font-size:11.5px"> — paste any image link</span>
+        <label class="form-label">Image * <span style="font-weight:400;color:#94a3b8;font-size:11.5px"> — upload or paste a URL</span></label>
+        <!-- Upload from phone -->
+        <label style="display:flex;align-items:center;gap:12px;padding:13px 16px;border:2px dashed #bae6fd;border-radius:12px;cursor:pointer;background:#f0f9ff;margin-bottom:10px">
+          <i class="fas fa-camera" style="font-size:1.4rem;color:#0ea5e9;min-width:22px"></i>
+          <div>
+            <p style="font-size:13.5px;font-weight:600;color:#0ea5e9;margin:0">Upload from phone / computer</p>
+            <p style="font-size:11px;color:#94a3b8;margin:2px 0 0">Tap to choose a photo</p>
+          </div>
+          <input type="file" id="imgUpload" accept="image/*" style="display:none" />
         </label>
-        <input class="form-input" type="url" id="fImg" placeholder="https://..." required />
+        <!-- Upload progress -->
+        <div id="uploadProgress" style="display:none;margin-bottom:10px">
+          <div style="background:#e0f2fe;border-radius:30px;height:6px;overflow:hidden">
+            <div id="progressBar" style="height:100%;background:#0ea5e9;width:0%;transition:width .3s;border-radius:30px"></div>
+          </div>
+          <p id="progressText" style="font-size:11px;color:#64748b;margin-top:5px">Uploading…</p>
+        </div>
+        <!-- OR divider -->
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <div style="flex:1;height:1px;background:#e0f2fe"></div>
+          <span style="font-size:11px;color:#94a3b8;font-weight:600">OR paste URL</span>
+          <div style="flex:1;height:1px;background:#e0f2fe"></div>
+        </div>
+        <input class="form-input" type="url" id="fImg" placeholder="https://..." />
         <img id="imgPreview" class="img-preview" alt="Image preview" onerror="this.style.display='none'" />
       </div>
 
@@ -502,8 +522,9 @@
      JAVASCRIPT
 ══════════════════════════════════════════════════════ -->
 <script>
-  const db   = firebase.firestore();
-  const auth = firebase.auth();
+  const db      = firebase.firestore();
+  const auth    = firebase.auth();
+  const storage = firebase.storage();
 
   let allItems   = [];
   let activeTab  = 'all';
@@ -695,6 +716,8 @@
     document.getElementById('itemForm').reset();
     document.getElementById('fAvail').checked = true;
     document.getElementById('imgPreview').classList.remove('show');
+    document.getElementById('uploadProgress').style.display = 'none';
+    document.getElementById('imgUpload').value = '';
     document.getElementById('itemModal').classList.add('open');
     document.body.style.overflow = 'hidden';
   }
@@ -732,6 +755,39 @@
     else { prev.classList.remove('show'); }
   });
 
+  /* ── Image upload to Firebase Storage ───────────────── */
+  document.getElementById('imgUpload').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const progressDiv  = document.getElementById('uploadProgress');
+    const progressBar  = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    progressDiv.style.display = 'block';
+    progressBar.style.width   = '0%';
+    progressText.textContent  = 'Uploading…';
+    const ref        = storage.ref(`menuItems/${Date.now()}_${file.name}`);
+    const uploadTask = ref.put(file);
+    uploadTask.on('state_changed',
+      snap => {
+        const pct = (snap.bytesTransferred / snap.totalBytes) * 100;
+        progressBar.style.width  = pct + '%';
+        progressText.textContent = `Uploading… ${Math.round(pct)}%`;
+      },
+      () => {
+        progressText.textContent = '❌ Upload failed. Try again.';
+        showToast('❌ Image upload failed.');
+      },
+      async () => {
+        const url  = await uploadTask.snapshot.ref.getDownloadURL();
+        document.getElementById('fImg').value = url;
+        const prev = document.getElementById('imgPreview');
+        prev.src = url; prev.classList.add('show');
+        progressText.textContent = '✅ Upload complete!';
+        setTimeout(() => { progressDiv.style.display = 'none'; }, 2000);
+      }
+    );
+  });
+
   /* ── Save (add or update) ───────────────────────────── */
   document.getElementById('itemForm').addEventListener('submit', async e => {
     e.preventDefault();
@@ -745,12 +801,20 @@
     if (document.getElementById('tNew').checked)     tags.push('new');
     if (document.getElementById('tSpicy').checked)   tags.push('spicy');
 
+    const imgUrl = document.getElementById('fImg').value.trim();
+    if (!imgUrl) {
+      showToast('❌ Please upload an image or paste an image URL.');
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-save"></i> <span id="saveBtnTxt">' + (editingId ? 'Save Changes' : 'Add Item') + '</span>';
+      return;
+    }
+
     const data = {
       name:      document.getElementById('fName').value.trim(),
       cat:       document.getElementById('fCat').value,
       price:     Number(document.getElementById('fPrice').value),
       desc:      document.getElementById('fDesc').value.trim(),
-      img:       document.getElementById('fImg').value.trim(),
+      img:       imgUrl,
       cal:       Number(document.getElementById('fCal').value) || 0,
       tags,
       available: document.getElementById('fAvail').checked,
