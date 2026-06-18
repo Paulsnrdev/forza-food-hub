@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Loyalty Points — FORZA FOOD HUB</title>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Poppins','sans-serif'] } } } }</script>
+
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'Poppins', sans-serif; background: #f0f9ff; }
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-thumb { background: #0ea5e9; border-radius: 4px; }
+
+    .pg-hdr { background:#fff; border-bottom:1px solid #e0f2fe; position:sticky; top:0; z-index:50; box-shadow:0 2px 12px rgba(14,165,233,.08); }
+    .pg-hdr-inner { max-width:1100px; margin:0 auto; padding:0 24px; height:64px; display:flex; align-items:center; justify-content:space-between; }
+    .logo-link { display:flex; align-items:center; gap:10px; text-decoration:none; }
+    .logo-plate { width:36px; height:36px; background:#0ea5e9; border-radius:9px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:14px; }
+    .logo-txt { font-size:1.15rem; font-weight:900; color:#0f172a; }
+    .back-btn { display:inline-flex; align-items:center; gap:7px; background:#f0f9ff; color:#0ea5e9; border:1.5px solid #bae6fd; border-radius:8px; padding:7px 15px; font-size:13px; font-weight:600; text-decoration:none; transition:all .2s; }
+    .back-btn:hover { background:#0ea5e9; color:#fff; border-color:#0ea5e9; }
+    .pg-wrap { max-width:920px; margin:0 auto; padding:36px 24px 60px; }
+
+    /* Hero banner */
+    .lp-hero {
+      background: linear-gradient(135deg,#075985,#0284c7,#0ea5e9);
+      border-radius: 20px; padding: 36px 32px; color: #fff;
+      position: relative; overflow: hidden; margin-bottom: 28px;
+    }
+    .lp-hero::after {
+      content:''; position:absolute; top:-30%; right:-5%;
+      width:280px; height:280px; border-radius:50%;
+      background:rgba(255,255,255,.06);
+    }
+
+    /* Tier cards */
+    .tier-card {
+      background: #fff; border-radius: 14px; padding: 20px 18px;
+      border: 2px solid #e0f2fe; text-align: center; transition: all .25s;
+    }
+    .tier-card.active-tier {
+      border-color: #0ea5e9;
+      box-shadow: 0 6px 24px rgba(14,165,233,.18);
+      transform: translateY(-3px);
+    }
+    .tier-icon { font-size: 2rem; margin-bottom: 6px; display: block; }
+
+    /* Reward cards */
+    .reward-card {
+      background: #fff; border-radius: 14px; padding: 20px 18px;
+      border: 1px solid #e0f2fe; transition: all .25s;
+      box-shadow: 0 2px 10px rgba(14,165,233,.06);
+    }
+    .reward-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(14,165,233,.14); border-color: #7dd3fc; }
+
+    .redeem-btn {
+      width: 100%; padding: 9px; margin-top: 12px;
+      border: 1.5px solid #0ea5e9; border-radius: 8px;
+      background: transparent; color: #0ea5e9;
+      font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 700;
+      cursor: pointer; transition: all .2s;
+    }
+    .redeem-btn:hover { background: #0ea5e9; color: #fff; }
+    .redeem-btn:disabled { opacity: .4; cursor: default; border-color: #cbd5e1; color: #94a3b8; }
+    .redeem-btn:disabled:hover { background: transparent; color: #94a3b8; }
+
+    /* Points history table */
+    .hist-row { display:flex; align-items:center; gap:12px; padding:11px 0; border-bottom:1px solid #f0f9ff; }
+    .hist-row:last-child { border-bottom: none; }
+    .pt-icon { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0; }
+    .pt-earn { background:#dcfce7; color:#16a34a; }
+    .pt-spend { background:#fee2e2; color:#dc2626; }
+    .pt-amt-earn { font-weight:700; color:#16a34a; font-size:14px; }
+    .pt-amt-spend { font-weight:700; color:#dc2626; font-size:14px; }
+
+    /* Progress bar */
+    .prog-track { background:#e0f2fe; border-radius:50px; height:10px; overflow:hidden; }
+    .prog-fill { height:100%; border-radius:50px; background:linear-gradient(90deg,#0284c7,#0ea5e9); transition:width .8s ease; }
+
+    /* Card */
+    .card { background:#fff; border-radius:16px; border:1px solid #e0f2fe; overflow:hidden; box-shadow:0 2px 12px rgba(14,165,233,.07); }
+    .card-head { padding:16px 22px; border-bottom:1px solid #f0f9ff; }
+    .card-body { padding:22px; }
+
+    /* Toast */
+    #toast { position:fixed; bottom:28px; right:28px; z-index:999; background:#0f172a; color:#fff; border-radius:12px; padding:13px 22px; font-size:13.5px; font-weight:600; display:flex; align-items:center; gap:10px; opacity:0; transform:translateX(90px); pointer-events:none; transition:opacity .3s, transform .3s; }
+    #toast.show { opacity:1; transform:translateX(0); }
+
+    .pg-footer { background:#0f172a; color:#64748b; text-align:center; padding:24px; font-size:12.5px; }
+    .pg-footer a { color:#0ea5e9; text-decoration:none; }
+
+    @media(max-width:768px){
+      .tier-grid { grid-template-columns:repeat(2,1fr)!important; }
+      .reward-grid { grid-template-columns:repeat(2,1fr)!important; }
+    }
+    @media(max-width:480px){
+      .tier-grid,.reward-grid { grid-template-columns:1fr!important; }
+      .lp-hero { padding:24px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="toast"><i class="fas fa-check-circle" style="color:#4ade80"></i><span id="toastMsg"></span></div>
+
+<!-- Header -->
+<header class="pg-hdr">
+  <div class="pg-hdr-inner">
+    <a href="index.html" class="logo-link">
+      <div class="logo-plate"><i class="fas fa-utensils"></i></div>
+      <span class="logo-txt">FORZA</span>
+    </a>
+    <div style="display:flex;align-items:center;gap:10px">
+      <span id="hdrUserName" style="font-size:13px;color:#64748b;font-weight:500"></span>
+      <a href="index.html" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Home</a>
+    </div>
+  </div>
+</header>
+
+<!-- Loading overlay -->
+<div id="pageLoading" style="display:flex;align-items:center;justify-content:center;min-height:60vh">
+  <div style="text-align:center">
+    <i class="fas fa-spinner fa-spin" style="font-size:2rem;color:#0ea5e9"></i>
+    <p style="margin-top:12px;color:#64748b;font-size:14px">Loading your points…</p>
+  </div>
+</div>
+
+<!-- Page content (hidden until loaded) -->
+<div id="pageContent" style="display:none">
+<div class="pg-wrap">
+  <p style="font-size:12.5px;color:#94a3b8;margin-bottom:22px">
+    <a href="index.html" style="color:#0ea5e9;text-decoration:none">Home</a> &rsaquo; Loyalty Points
+  </p>
+
+  <!-- Hero Banner -->
+  <div class="lp-hero">
+    <div style="position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:20px">
+      <div>
+        <p style="font-size:12.5px;opacity:.75;margin:0 0 6px;letter-spacing:.8px;text-transform:uppercase">Your Balance</p>
+        <p style="font-size:3rem;font-weight:900;margin:0;line-height:1" id="pointsBalance">0</p>
+        <p style="font-size:14px;opacity:.8;margin:6px 0 0">FORZA Points</p>
+      </div>
+      <div style="text-align:right">
+        <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.15);border-radius:50px;padding:8px 18px;backdrop-filter:blur(6px)">
+          <i class="fas fa-medal"></i>
+          <span style="font-weight:700;font-size:14px" id="tierBadge">Bronze Member</span>
+        </div>
+        <p style="font-size:12.5px;opacity:.7;margin:10px 0 6px" id="nextTierLabel">0 pts to Silver</p>
+        <div style="width:200px;background:rgba(255,255,255,.2);border-radius:50px;height:8px;overflow:hidden">
+          <div id="heroProgBar" style="height:100%;border-radius:50px;background:#fff;transition:width .8s ease;width:0%"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tier Overview -->
+  <div style="margin-bottom:28px">
+    <h2 style="font-size:16px;font-weight:800;color:#0f172a;margin:0 0 16px">Membership Tiers</h2>
+    <div class="tier-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px">
+      <div class="tier-card" id="tier-bronze">
+        <span class="tier-icon">🥉</span>
+        <p style="font-weight:800;color:#92400e;margin:0 0 3px">Bronze</p>
+        <p style="font-size:12px;color:#94a3b8;margin:0">0 – 499 pts</p>
+      </div>
+      <div class="tier-card" id="tier-silver">
+        <span class="tier-icon">🥈</span>
+        <p style="font-weight:800;color:#475569;margin:0 0 3px">Silver</p>
+        <p style="font-size:12px;color:#94a3b8;margin:0">500 – 1,999 pts</p>
+      </div>
+      <div class="tier-card" id="tier-gold">
+        <span class="tier-icon">🥇</span>
+        <p style="font-weight:800;color:#d97706;margin:0 0 3px">Gold</p>
+        <p style="font-size:12px;color:#94a3b8;margin:0">2,000 – 4,999 pts</p>
+      </div>
+      <div class="tier-card" id="tier-diamond">
+        <span class="tier-icon">💎</span>
+        <p style="font-weight:800;color:#7c3aed;margin:0 0 3px">Diamond</p>
+        <p style="font-size:12px;color:#94a3b8;margin:0">5,000+ pts</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Redeem Rewards -->
+  <div style="margin-bottom:28px">
+    <h2 style="font-size:16px;font-weight:800;color:#0f172a;margin:0 0 5px">Redeem Rewards</h2>
+    <p style="font-size:13px;color:#64748b;margin:0 0 16px">Spend your points on food and discounts!</p>
+    <div class="reward-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px">
+      <div class="reward-card">
+        <div style="font-size:2rem;margin-bottom:8px">🥤</div>
+        <p style="font-weight:800;color:#0f172a;font-size:13.5px;margin:0 0 4px">Free Drink</p>
+        <p style="font-size:12px;color:#94a3b8;margin:0 0 4px">Any chilled drink</p>
+        <p style="font-size:14px;font-weight:900;color:#0ea5e9;margin:0">150 pts</p>
+        <button class="redeem-btn" data-pts="150" data-name="Free Drink" onclick="redeem(this)">Redeem</button>
+      </div>
+      <div class="reward-card">
+        <div style="font-size:2rem;margin-bottom:8px">🍟</div>
+        <p style="font-weight:800;color:#0f172a;font-size:13.5px;margin:0 0 4px">Free Snack</p>
+        <p style="font-size:12px;color:#94a3b8;margin:0 0 4px">Puff Puff or Chin Chin</p>
+        <p style="font-size:14px;font-weight:900;color:#0ea5e9;margin:0">200 pts</p>
+        <button class="redeem-btn" data-pts="200" data-name="Free Snack" onclick="redeem(this)">Redeem</button>
+      </div>
+      <div class="reward-card">
+        <div style="font-size:2rem;margin-bottom:8px">🎟️</div>
+        <p style="font-weight:800;color:#0f172a;font-size:13.5px;margin:0 0 4px">₦500 Voucher</p>
+        <p style="font-size:12px;color:#94a3b8;margin:0 0 4px">Off your next order</p>
+        <p style="font-size:14px;font-weight:900;color:#0ea5e9;margin:0">500 pts</p>
+        <button class="redeem-btn" data-pts="500" data-name="₦500 Voucher" onclick="redeem(this)">Redeem</button>
+      </div>
+      <div class="reward-card">
+        <div style="font-size:2rem;margin-bottom:8px">🍽️</div>
+        <p style="font-weight:800;color:#0f172a;font-size:13.5px;margin:0 0 4px">Free Lunch</p>
+        <p style="font-size:12px;color:#94a3b8;margin:0 0 4px">Any lunch item</p>
+        <p style="font-size:14px;font-weight:900;color:#0ea5e9;margin:0">1,000 pts</p>
+        <button class="redeem-btn" data-pts="1000" data-name="Free Lunch" onclick="redeem(this)">Redeem</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Points History -->
+  <div class="card">
+    <div class="card-head" style="display:flex;align-items:center;justify-content:space-between">
+      <h2 style="font-size:15px;font-weight:800;color:#0f172a;margin:0">Points History</h2>
+      <span style="font-size:12px;color:#94a3b8">Last 20 transactions</span>
+    </div>
+    <div class="card-body" id="historyList">
+      <div style="text-align:center;padding:30px 0;color:#94a3b8">
+        <i class="fas fa-spinner fa-spin" style="font-size:1.5rem;color:#bae6fd"></i>
+        <p style="margin-top:10px;font-size:13px">Loading history…</p>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<footer class="pg-footer">
+  <p>&copy; 2026 FORZA FOOD HUB · <a href="index.html">Back to Main Site</a> · <a href="my-account.html">My Account</a></p>
+</footer>
+
+<script>
+  let currentUser  = null;
+  let currentPoints = 0;
+  const db   = firebase.firestore();
+  const auth = firebase.auth();
+
+  const tiers = [
+    { key:'bronze',  min:0,    max:499,   label:'Bronze Member',  next:500,   nextName:'Silver' },
+    { key:'silver',  min:500,  max:1999,  label:'Silver Member',  next:2000,  nextName:'Gold' },
+    { key:'gold',    min:2000, max:4999,  label:'Gold Member',    next:5000,  nextName:'Diamond' },
+    { key:'diamond', min:5000, max:Infinity, label:'Diamond Member', next:null, nextName:null },
+  ];
+
+  function getTier(pts) { return tiers.find(t => pts >= t.min && pts <= t.max) || tiers[0]; }
+
+  function fmtDate(ts) {
+    if (!ts) return '';
+    const d = ts.toDate ? ts.toDate() : new Date(ts);
+    return d.toLocaleString('en-NG', { dateStyle:'medium', timeStyle:'short' });
+  }
+
+  function updateUI(pts) {
+    currentPoints = pts;
+    document.getElementById('pointsBalance').textContent = pts.toLocaleString();
+
+    const tier = getTier(pts);
+    document.getElementById('tierBadge').textContent = tier.label;
+
+    // Tier card highlight
+    ['bronze','silver','gold','diamond'].forEach(k => {
+      document.getElementById('tier-' + k).classList.toggle('active-tier', k === tier.key);
+    });
+
+    // Progress bar
+    if (tier.next) {
+      const pct = Math.min(100, Math.round(((pts - tier.min) / (tier.next - tier.min)) * 100));
+      document.getElementById('heroProgBar').style.width = pct + '%';
+      const remaining = tier.next - pts;
+      document.getElementById('nextTierLabel').textContent = remaining + ' pts to ' + tier.nextName;
+    } else {
+      document.getElementById('heroProgBar').style.width = '100%';
+      document.getElementById('nextTierLabel').textContent = 'Maximum tier reached!';
+    }
+
+    // Enable/disable redeem buttons
+    document.querySelectorAll('.redeem-btn').forEach(btn => {
+      btn.disabled = parseInt(btn.dataset.pts) > pts;
+    });
+  }
+
+  function loadHistory() {
+    db.collection('pointsHistory')
+      .where('userId', '==', currentUser.uid)
+      .get()
+      .then(snap => {
+        const entries = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        entries.sort((a, b) => (b.date?.toMillis?.() || 0) - (a.date?.toMillis?.() || 0));
+        const top20 = entries.slice(0, 20);
+
+        const list = document.getElementById('historyList');
+        if (!top20.length) {
+          list.innerHTML = '<p style="text-align:center;color:#94a3b8;font-size:13px;padding:20px 0">No transactions yet. Start ordering to earn points!</p>';
+          return;
+        }
+        list.innerHTML = top20.map(e => `
+          <div class="hist-row">
+            <div class="pt-icon ${e.type === 'earn' ? 'pt-earn' : 'pt-spend'}">
+              <i class="fas ${e.type === 'earn' ? 'fa-plus' : 'fa-minus'}"></i>
+            </div>
+            <div style="flex:1;min-width:0">
+              <p style="font-size:13.5px;font-weight:600;color:#0f172a;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e.description || 'Transaction'}</p>
+              <p style="font-size:12px;color:#94a3b8;margin:2px 0 0">${fmtDate(e.date)}</p>
+            </div>
+            <div class="${e.type === 'earn' ? 'pt-amt-earn' : 'pt-amt-spend'}">
+              ${e.type === 'earn' ? '+' : '−'}${e.points} pts
+            </div>
+          </div>`).join('');
+      })
+      .catch(() => {
+        document.getElementById('historyList').innerHTML =
+          '<p style="text-align:center;color:#94a3b8;font-size:13px;padding:20px 0">Could not load history.</p>';
+      });
+  }
+
+  async function redeem(btn) {
+    const pts  = parseInt(btn.dataset.pts);
+    const name = btn.dataset.name;
+    if (pts > currentPoints) { toast('Not enough points to redeem this reward.'); return; }
+
+    btn.disabled = true;
+    btn.textContent = 'Processing…';
+
+    try {
+      const batch = db.batch();
+
+      const userRef = db.collection('users').doc(currentUser.uid);
+      batch.update(userRef, { loyaltyPoints: firebase.firestore.FieldValue.increment(-pts) });
+
+      const histRef = db.collection('pointsHistory').doc();
+      batch.set(histRef, {
+        userId:      currentUser.uid,
+        type:        'redeem',
+        points:      pts,
+        description: `Redeemed: ${name}`,
+        date:        firebase.firestore.FieldValue.serverTimestamp(),
+      });
+
+      await batch.commit();
+      currentPoints -= pts;
+      updateUI(currentPoints);
+      loadHistory();
+      toast(`"${name}" redeemed! −${pts} pts. Enjoy!`);
+    } catch {
+      toast('Redemption failed. Please try again.');
+      btn.disabled = false;
+      btn.textContent = 'Redeem';
+    }
+  }
+
+  // Auth guard
+  auth.onAuthStateChanged(user => {
+    if (!user) {
+      sessionStorage.setItem('forzaLoginRedirect', window.location.href);
+      window.location.href = 'login.html';
+      return;
+    }
+    currentUser = user;
+    document.getElementById('hdrUserName').textContent = 'Hi, ' + (user.displayName?.split(' ')[0] || '');
+
+    db.collection('users').doc(user.uid).get().then(doc => {
+      const pts = doc.exists ? (doc.data().loyaltyPoints || 0) : 0;
+      updateUI(pts);
+      document.getElementById('pageLoading').style.display = 'none';
+      document.getElementById('pageContent').style.display = 'block';
+      loadHistory();
+    }).catch(() => {
+      updateUI(0);
+      document.getElementById('pageLoading').style.display = 'none';
+      document.getElementById('pageContent').style.display = 'block';
+    });
+  });
+
+  let toastTimer;
+  function toast(msg) {
+    const t = document.getElementById('toast');
+    document.getElementById('toastMsg').textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 3200);
+  }
+</script>
+</body>
+</html>

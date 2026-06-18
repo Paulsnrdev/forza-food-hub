@@ -4,6 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Leave Feedback — FORZA FOOD HUB</title>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
@@ -260,7 +266,10 @@
     <div class="success-state" id="successState">
       <div class="success-icon">🎉</div>
       <h2 style="font-size:1.4rem;font-weight:900;color:#0f172a;margin:0 0 8px">Thank You!</h2>
-      <p style="font-size:13.5px;color:#64748b;margin:0 0 6px">Your feedback has been submitted successfully.</p>
+      <p style="font-size:13.5px;color:#64748b;margin:0 0 10px">Your feedback has been submitted successfully.</p>
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:11px 18px;display:inline-flex;align-items:center;gap:8px;margin-bottom:16px;font-size:13.5px;font-weight:700;color:#15803d">
+        <i class="fas fa-star" style="color:#22c55e"></i> You earned <span id="fbPtsEarned">50</span> loyalty points!
+      </div>
       <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
         <a href="index.html#menu" style="background:linear-gradient(135deg,#0284c7,#0ea5e9);color:#fff;border-radius:10px;padding:11px 22px;font-size:13.5px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:7px"><i class="fas fa-utensils"></i> Order Again</a>
       </div>
@@ -306,6 +315,17 @@
 <script>
   const starLabels = ['', 'Poor 😞', 'Fair 😐', 'Good 😊', 'Great 😄', 'Excellent! 🤩'];
   let overallVal = 0;
+  let currentUser = null;
+
+  /* ── Auth guard ─────────────────────────────────────────── */
+  firebase.auth().onAuthStateChanged(user => {
+    if (!user) {
+      sessionStorage.setItem('forzaLoginRedirect', 'feedback.html');
+      window.location.href = 'login.html';
+      return;
+    }
+    currentUser = user;
+  });
 
   function setStars(group, val) {
     overallVal = val;
@@ -319,22 +339,81 @@
     row.querySelectorAll('.mini-star').forEach((s, i) => s.classList.toggle('lit', i < val));
   }
 
+  function getCatVal(cat) {
+    const row = document.querySelector(`.mini-stars[data-cat="${cat}"]`);
+    const lit = row.querySelectorAll('.mini-star.lit').length;
+    return lit;
+  }
+
   function toggleTag(el) { el.classList.toggle('selected'); }
 
   function updateCount(el) {
     document.getElementById('charCount').textContent = `${el.value.length} / 500`;
   }
 
-  function submitFeedback(e) {
+  async function submitFeedback(e) {
     e.preventDefault();
-    if (!overallVal) { toast('Please give an overall star rating first!'); return; }
-    document.getElementById('feedbackCard').querySelector('form').style.display = 'none';
-    document.getElementById('successState').style.display = 'block';
-    toast('Feedback submitted successfully!');
+    if (!overallVal) { showToast('Please give an overall star rating first!'); return; }
+    if (!currentUser) { window.location.href = 'login.html'; return; }
+
+    const submitBtn = document.querySelector('[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:8px"></i>Submitting…';
+
+    const tags = [...document.querySelectorAll('.tag-chip.selected')].map(t => t.textContent);
+    const recommend = document.querySelector('input[name="recommend"]:checked')?.value || '';
+    const comment   = document.querySelector('textarea.form-input').value.trim();
+    const db        = firebase.firestore();
+
+    try {
+      const batch   = db.batch();
+      const fbRef   = db.collection('feedback').doc();
+      const userRef = db.collection('users').doc(currentUser.uid);
+      const histRef = db.collection('pointsHistory').doc();
+
+      batch.set(fbRef, {
+        userId:    currentUser.uid,
+        date:      firebase.firestore.FieldValue.serverTimestamp(),
+        overall:   overallVal,
+        categories: {
+          food:  getCatVal('food'),
+          speed: getCatVal('speed'),
+          clean: getCatVal('clean'),
+          value: getCatVal('value'),
+          staff: getCatVal('staff'),
+        },
+        tags,
+        recommend,
+        comment,
+      });
+
+      batch.update(userRef, {
+        loyaltyPoints: firebase.firestore.FieldValue.increment(50),
+      });
+
+      batch.set(histRef, {
+        userId:      currentUser.uid,
+        type:        'earn',
+        points:      50,
+        description: 'Feedback bonus — thanks for helping us improve!',
+        date:        firebase.firestore.FieldValue.serverTimestamp(),
+      });
+
+      await batch.commit();
+
+      document.getElementById('feedbackCard').querySelector('form').style.display = 'none';
+      document.getElementById('successState').style.display = 'block';
+      showToast('Feedback submitted! +50 loyalty points earned 🎉');
+    } catch (err) {
+      console.error(err);
+      showToast('Submission failed. Please try again.');
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<i class="fas fa-paper-plane" style="margin-right:8px"></i>Submit Feedback';
+    }
   }
 
   let toastTimer;
-  function toast(msg) {
+  function showToast(msg) {
     const t = document.getElementById('toast');
     document.getElementById('toastMsg').textContent = msg;
     t.classList.add('show');

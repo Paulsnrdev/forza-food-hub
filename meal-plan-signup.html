@@ -4,6 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Meal Plan Signup — FORZA FOOD HUB</title>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
@@ -247,7 +253,7 @@
             </div>
             <div>
               <label class="form-label">Level</label>
-              <select class="form-input">
+              <select class="form-input" id="f-level">
                 <option>100 Level</option>
                 <option>200 Level</option>
                 <option selected>300 Level</option>
@@ -257,7 +263,7 @@
             </div>
             <div>
               <label class="form-label">Hostel / Accommodation</label>
-              <select class="form-input">
+              <select class="form-input" id="f-hostel">
                 <option value="">Select…</option>
                 <option>Male Hostel A</option>
                 <option>Male Hostel B</option>
@@ -270,7 +276,7 @@
             </div>
             <div style="grid-column:1/-1">
               <label class="form-label">Dietary Restrictions / Allergies (optional)</label>
-              <input class="form-input" type="text" placeholder="e.g. No peanuts, vegetarian only…" />
+              <input class="form-input" type="text" id="f-dietary" placeholder="e.g. No peanuts, vegetarian only…" />
             </div>
             <div style="grid-column:1/-1">
               <label class="form-label">Plan start date</label>
@@ -426,28 +432,56 @@
 
 <script>
   const plans = {
-    basic:   { name:'Basic Plan', price:'₦5,000', total:'₦5,000', savings:'₦1,200', features:['5 Lunches per week','1 Free Snack daily'] },
-    student: { name:'Student Plan', price:'₦8,500', total:'₦8,500', savings:'₦3,500', features:['5 Lunches + 5 Breakfasts','2 Free Snacks daily','Priority Ordering'] },
-    premium: { name:'Premium Plan', price:'₦12,000', total:'₦12,000', savings:'₦6,000+', features:['Unlimited Meals','All Beverages','Free Snacks Anytime','VIP Priority Access'] },
+    basic:   { name:'Basic Plan',   price:'₦5,000',  rawPrice:5000,  savings:'₦1,200', pts:500,  features:['5 Lunches per week','1 Free Snack daily'] },
+    student: { name:'Student Plan', price:'₦8,500',  rawPrice:8500,  savings:'₦3,500', pts:1700, features:['5 Lunches + 5 Breakfasts','2 Free Snacks daily','Priority Ordering'] },
+    premium: { name:'Premium Plan', price:'₦12,000', rawPrice:12000, savings:'₦6,000+',pts:3600, features:['Unlimited Meals','All Beverages','Free Snacks Anytime','VIP Priority Access'] },
   };
 
   let selected = null;
+  let currentUser = null;
+
+  /* ── Auth guard + pre-fill ──────────────────────────────── */
+  firebase.auth().onAuthStateChanged(async user => {
+    if (!user) {
+      sessionStorage.setItem('forzaLoginRedirect', 'meal-plan-signup.html' + window.location.search);
+      window.location.href = 'login.html';
+      return;
+    }
+    currentUser = user;
+    try {
+      const doc  = await firebase.firestore().collection('users').doc(user.uid).get();
+      const data = doc.exists ? doc.data() : {};
+      const set  = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
+      set('f-fname',   data.firstName);
+      set('f-lname',   data.lastName);
+      set('f-sid',     data.studentID);
+      set('f-phone',   data.phone);
+      set('f-email',   data.email || user.email);
+      set('f-dietary', data.dietaryPrefs);
+      if (data.faculty) {
+        const sel = document.getElementById('f-faculty');
+        for (const o of sel.options) { if (o.value === data.faculty) { o.selected = true; break; } }
+      }
+      if (data.level) {
+        const sel = document.getElementById('f-level');
+        for (const o of sel.options) { if (o.value === data.level) { o.selected = true; break; } }
+      }
+    } catch (e) { console.error(e); }
+  });
 
   function selectPlan(key) {
     selected = key;
     ['basic','student','premium'].forEach(k => document.getElementById('card-' + k).classList.remove('selected'));
     document.getElementById('card-' + key).classList.add('selected');
-    document.getElementById('nextBtn1').style.opacity = '1';
-    document.getElementById('nextBtn1').textContent = '';
     document.getElementById('nextBtn1').innerHTML = `Continue with ${plans[key].name} <i class="fas fa-arrow-right" style="margin-left:8px"></i>`;
   }
 
   function goToStep(n) {
-    if (n === 2 && !selected) { toast('Please select a plan to continue!'); return; }
+    if (n === 2 && !selected) { showToast('Please select a plan to continue!'); return; }
     if (n === 3) {
       const fname = document.getElementById('f-fname').value.trim();
-      const sid = document.getElementById('f-sid').value.trim();
-      if (!fname || !sid) { toast('Please fill in your name and Student ID!'); return; }
+      const sid   = document.getElementById('f-sid').value.trim();
+      if (!fname || !sid) { showToast('Please fill in your name and Student ID!'); return; }
     }
     [1,2,3,4].forEach(i => document.getElementById('step' + i).style.display = 'none');
     document.getElementById('step' + n).style.display = 'block';
@@ -463,12 +497,14 @@
       const pt = document.getElementById('sumTotal' + sfx);
       if (pn) pn.textContent = p.name;
       if (pr) pr.textContent = p.price;
-      if (pt) pt.textContent = p.total;
+      if (pt) pt.textContent = p.price;
     });
-    const savEl = document.getElementById('sumSavings');
+    const savEl  = document.getElementById('sumSavings');
     const featEl = document.getElementById('sumFeatures');
-    if (savEl) savEl.textContent = p.savings;
-    if (featEl) featEl.innerHTML = p.features.map(f => `<div style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#0f172a"><i class="fas fa-check" style="color:#22c55e;font-size:11px;width:13px"></i>${f}</div>`).join('');
+    if (savEl)  savEl.textContent = p.savings;
+    if (featEl) featEl.innerHTML = p.features.map(f =>
+      `<div style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#0f172a"><i class="fas fa-check" style="color:#22c55e;font-size:11px;width:13px"></i>${f}</div>`
+    ).join('');
     const narEl = document.getElementById('narration');
     const sidVal = document.getElementById('f-sid')?.value.trim() || 'STUDENT-ID';
     if (narEl) narEl.textContent = `MEALPLAN-${selected.toUpperCase()}-${sidVal}`;
@@ -481,9 +517,9 @@
       if (!dot) return;
       dot.classList.remove('done','active','pending');
       lbl.classList.remove('done','active');
-      if (i < active) { dot.classList.add('done'); lbl.classList.add('done'); }
-      else if (i === active) { dot.classList.add('active'); lbl.classList.add('active'); }
-      else { dot.classList.add('pending'); }
+      if (i < active)      { dot.classList.add('done');   lbl.classList.add('done'); }
+      else if (i === active){ dot.classList.add('active'); lbl.classList.add('active'); }
+      else                  { dot.classList.add('pending'); }
       const line = document.getElementById('line' + i);
       if (line) line.classList.toggle('done', i < active);
     });
@@ -494,17 +530,67 @@
     label.classList.add('active');
   }
 
-  function submitPayment() {
-    const p = plans[selected];
-    document.getElementById('confirmedPlan').textContent = p.name;
-    const d = new Date(); d.setDate(d.getDate() + (8 - d.getDay()) % 7 || 7);
-    document.getElementById('confirmedDate').textContent = d.toLocaleDateString('en-NG', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
-    goToStep(4);
-    toast('Payment confirmed! Your meal plan is now active!');
+  async function submitPayment() {
+    if (!currentUser || !selected) return;
+    const payBtn = document.querySelector('#step3 .btn-sky');
+    payBtn.disabled = true;
+    payBtn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:7px"></i>Processing…';
+
+    const p           = plans[selected];
+    const payMethod   = document.querySelector('input[name="pay"]:checked')?.value || 'transfer';
+    const startDateVal= document.getElementById('f-start')?.value || '';
+    const startDate   = startDateVal ? new Date(startDateVal) : (() => {
+      const d = new Date(); d.setDate(d.getDate() + ((8 - d.getDay()) % 7 || 7)); return d;
+    })();
+
+    try {
+      const db      = firebase.firestore();
+      const planRef = db.collection('mealPlans').doc();
+      const userRef = db.collection('users').doc(currentUser.uid);
+      const histRef = db.collection('pointsHistory').doc();
+      const batch   = db.batch();
+
+      batch.set(planRef, {
+        userId:        currentUser.uid,
+        planKey:       selected,
+        planName:      p.name,
+        price:         p.rawPrice,
+        startDate:     firebase.firestore.Timestamp.fromDate(startDate),
+        paymentMethod: payMethod,
+        status:        'active',
+        createdAt:     firebase.firestore.FieldValue.serverTimestamp(),
+      });
+
+      batch.update(userRef, {
+        activeMealPlan: selected,
+        loyaltyPoints:  firebase.firestore.FieldValue.increment(p.pts),
+      });
+
+      batch.set(histRef, {
+        userId:      currentUser.uid,
+        type:        'earn',
+        points:      p.pts,
+        description: `${p.name} signup bonus`,
+        date:        firebase.firestore.FieldValue.serverTimestamp(),
+      });
+
+      await batch.commit();
+
+      document.getElementById('confirmedPlan').textContent = p.name;
+      document.getElementById('confirmedDate').textContent =
+        startDate.toLocaleDateString('en-NG', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+      goToStep(4);
+      showToast(`Plan activated! +${p.pts.toLocaleString()} loyalty points earned 🎉`);
+    } catch (err) {
+      console.error(err);
+      showToast('Payment confirmation failed. Please try again.');
+      payBtn.disabled = false;
+      payBtn.innerHTML = '<i class="fas fa-check-circle" style="margin-right:7px"></i>I\'ve Made Payment / Confirm';
+    }
   }
 
   let toastTimer;
-  function toast(msg) {
+  function showToast(msg) {
     const t = document.getElementById('toast');
     document.getElementById('toastMsg').textContent = msg;
     t.classList.add('show');
@@ -524,7 +610,7 @@
     const monday = new Date(today);
     monday.setDate(today.getDate() + daysUntilMonday);
     startInput.value = monday.toISOString().split('T')[0];
-    startInput.min = monday.toISOString().split('T')[0];
+    startInput.min   = monday.toISOString().split('T')[0];
   }
 </script>
 </body>

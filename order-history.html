@@ -4,6 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Order History — FORZA FOOD HUB</title>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
@@ -13,6 +19,11 @@
     body { font-family: 'Poppins', sans-serif; background: #f0f9ff; }
     ::-webkit-scrollbar { width: 5px; }
     ::-webkit-scrollbar-thumb { background: #0ea5e9; border-radius: 4px; }
+
+    /* Loading overlay */
+    #loadOverlay { position:fixed;inset:0;background:#f0f9ff;display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:14px; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .spin-ico { font-size:2.2rem;color:#0ea5e9;animation:spin 1s linear infinite; }
 
     .pg-hdr { background:#fff; border-bottom:1px solid #e0f2fe; position:sticky; top:0; z-index:50; box-shadow:0 2px 12px rgba(14,165,233,.08); }
     .pg-hdr-inner { max-width:1100px; margin:0 auto; padding:0 24px; height:64px; display:flex; align-items:center; justify-content:space-between; }
@@ -53,12 +64,13 @@
 
     /* Status badges */
     .badge { display:inline-flex; align-items:center; gap:5px; border-radius:50px; padding:4px 12px; font-size:11.5px; font-weight:700; }
+    .badge-confirmed { background:#dbeafe; color:#1d4ed8; }
     .badge-delivered { background:#dcfce7; color:#15803d; }
     .badge-preparing { background:#fef9c3; color:#92400e; }
-    .badge-ready { background:#dbeafe; color:#1d4ed8; }
+    .badge-ready    { background:#e0f2fe; color:#0369a1; }
     .badge-cancelled { background:#fee2e2; color:#b91c1c; }
 
-    /* Reorder button */
+    /* Buttons */
     .btn-sky { background:linear-gradient(135deg,#0284c7,#0ea5e9); color:#fff; border:none; border-radius:8px; padding:8px 18px; font-family:'Poppins',sans-serif; font-size:12.5px; font-weight:700; cursor:pointer; transition:opacity .2s; }
     .btn-sky:hover { opacity:.88; }
     .btn-outline { background:#fff; color:#0ea5e9; border:1.5px solid #bae6fd; border-radius:8px; padding:7px 16px; font-family:'Poppins',sans-serif; font-size:12.5px; font-weight:600; cursor:pointer; transition:all .2s; }
@@ -67,11 +79,6 @@
     /* Empty state */
     .empty { text-align:center; padding:60px 24px; }
     .empty i { font-size:3rem; color:#bae6fd; margin-bottom:14px; display:block; }
-
-    /* Pagination */
-    .page-btn { width:34px; height:34px; border-radius:8px; border:1.5px solid #e0f2fe; background:#fff; color:#64748b; font-family:'Poppins',sans-serif; font-size:13px; font-weight:600; cursor:pointer; transition:all .2s; display:inline-flex; align-items:center; justify-content:center; }
-    .page-btn.active { background:#0ea5e9; color:#fff; border-color:#0ea5e9; }
-    .page-btn:hover:not(.active) { border-color:#7dd3fc; color:#0ea5e9; }
 
     /* Toast */
     #toast { position:fixed; bottom:28px; right:28px; z-index:999; background:#0f172a; color:#fff; border-radius:12px; padding:13px 22px; font-size:13.5px; font-weight:600; display:flex; align-items:center; gap:10px; opacity:0; transform:translateX(90px); pointer-events:none; transition:opacity .3s, transform .3s; }
@@ -87,6 +94,12 @@
   </style>
 </head>
 <body>
+
+<!-- Loading overlay -->
+<div id="loadOverlay">
+  <i class="fas fa-spinner spin-ico"></i>
+  <p style="font-size:13.5px;color:#64748b;font-family:'Poppins',sans-serif">Loading your orders…</p>
+</div>
 
 <div id="toast"><i class="fas fa-check-circle" style="color:#4ade80"></i><span id="toastMsg"></span></div>
 
@@ -119,27 +132,19 @@
   <!-- Filters -->
   <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:22px">
     <div class="filter-bar">
-      <button class="f-btn active" onclick="filterOrders('all',this)">All Orders <span style="background:#e0f2fe;color:#0369a1;border-radius:50px;padding:1px 8px;font-size:11px;margin-left:4px">8</span></button>
-      <button class="f-btn" onclick="filterOrders('active',this)">Active <span style="background:#fef9c3;color:#92400e;border-radius:50px;padding:1px 8px;font-size:11px;margin-left:4px">2</span></button>
-      <button class="f-btn" onclick="filterOrders('delivered',this)">Delivered</button>
-      <button class="f-btn" onclick="filterOrders('cancelled',this)">Cancelled</button>
+      <button class="f-btn active" data-filter="all" onclick="setFilter('all',this)">All Orders</button>
+      <button class="f-btn" data-filter="active" onclick="setFilter('active',this)">Active</button>
+      <button class="f-btn" data-filter="delivered" onclick="setFilter('delivered',this)">Delivered</button>
+      <button class="f-btn" data-filter="cancelled" onclick="setFilter('cancelled',this)">Cancelled</button>
     </div>
     <div class="search-box">
       <i class="fas fa-search"></i>
-      <input type="text" placeholder="Search orders…" oninput="searchOrders(this.value)" />
+      <input type="text" placeholder="Search orders…" oninput="setSearch(this.value)" />
     </div>
   </div>
 
   <!-- Orders List -->
   <div id="ordersList"></div>
-
-  <!-- Pagination -->
-  <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:24px">
-    <button class="page-btn"><i class="fas fa-chevron-left"></i></button>
-    <button class="page-btn active">1</button>
-    <button class="page-btn">2</button>
-    <button class="page-btn"><i class="fas fa-chevron-right"></i></button>
-  </div>
 </div>
 
 <footer class="pg-footer">
@@ -147,155 +152,101 @@
 </footer>
 
 <script>
-  const orders = [
-    {
-      id:'#FZO-20261108', date:'Nov 8, 2026 · 12:34 PM', status:'delivered',
-      items:[
-        { name:'Power Breakfast Set', qty:1, price:600, img:'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=80&q=60' },
-        { name:'Jollof Rice & Chicken', qty:1, price:900, img:'https://images.unsplash.com/photo-1512058564366-18510be2db19?w=80&q=60' },
-        { name:'Zobo Drink', qty:2, price:200, img:'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=80&q=60' },
-      ],
-      discount:170, total:1530
-    },
-    {
-      id:'#FZO-20261106', date:'Nov 6, 2026 · 1:02 PM', status:'delivered',
-      items:[
-        { name:'Moi Moi & Akamu', qty:1, price:450, img:'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=80&q=60' },
-        { name:'Chapman', qty:1, price:350, img:'https://images.unsplash.com/photo-1536935338788-846bb9981813?w=80&q=60' },
-      ],
-      discount:0, total:800
-    },
-    {
-      id:'#FZO-20261105', date:'Nov 5, 2026 · 7:45 AM', status:'preparing',
-      items:[
-        { name:'Egg Sandwich & Tea', qty:2, price:500, img:'https://images.unsplash.com/photo-1528736235302-52922df5c122?w=80&q=60' },
-      ],
-      discount:0, total:1000
-    },
-    {
-      id:'#FZO-20261104', date:'Nov 4, 2026 · 12:55 PM', status:'ready',
-      items:[
-        { name:'Egusi Soup & Eba', qty:1, price:800, img:'https://images.unsplash.com/photo-1512058564366-18510be2db19?w=80&q=60' },
-        { name:'Fresh Fruit Juice', qty:1, price:400, img:'https://images.unsplash.com/photo-1600271886742-f049cd451bba?w=80&q=60' },
-        { name:'Puff Puff (6 pcs)', qty:1, price:300, img:'https://images.unsplash.com/photo-1551024601-bec78aea704b?w=80&q=60' },
-      ],
-      discount:150, total:1350
-    },
-    {
-      id:'#FZO-20261101', date:'Nov 1, 2026 · 2:15 PM', status:'delivered',
-      items:[
-        { name:'Fried Rice & Turkey', qty:1, price:1100, img:'https://images.unsplash.com/photo-1512058564366-18510be2db19?w=80&q=60' },
-        { name:'Kunu', qty:1, price:200, img:'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=80&q=60' },
-      ],
-      discount:130, total:1170
-    },
-    {
-      id:'#FZO-20261029', date:'Oct 29, 2026 · 8:10 AM', status:'cancelled',
-      items:[
-        { name:'Akara & Oat Porridge', qty:1, price:400, img:'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=80&q=60' },
-      ],
-      discount:0, total:400
-    },
-    {
-      id:'#FZO-20261028', date:'Oct 28, 2026 · 12:08 PM', status:'delivered',
-      items:[
-        { name:'Jollof Rice & Chicken', qty:2, price:900, img:'https://images.unsplash.com/photo-1512058564366-18510be2db19?w=80&q=60' },
-        { name:'Chilled Zobo', qty:2, price:200, img:'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=80&q=60' },
-      ],
-      discount:220, total:1980
-    },
-    {
-      id:'#FZO-20261025', date:'Oct 25, 2026 · 1:30 PM', status:'delivered',
-      items:[
-        { name:'Afang Soup & Fufu', qty:1, price:850, img:'https://images.unsplash.com/photo-1512058564366-18510be2db19?w=80&q=60' },
-        { name:'Chin Chin (Pack)', qty:1, price:250, img:'https://images.unsplash.com/photo-1551024601-bec78aea704b?w=80&q=60' },
-      ],
-      discount:115, total:985
-    },
-  ];
-
   const statusMap = {
-    delivered: { label:'Delivered', cls:'badge-delivered', icon:'fa-check-circle' },
-    preparing: { label:'Preparing', cls:'badge-preparing', icon:'fa-fire' },
-    ready:     { label:'Ready for Pickup', cls:'badge-ready', icon:'fa-bell' },
-    cancelled: { label:'Cancelled', cls:'badge-cancelled', icon:'fa-times-circle' },
+    confirmed: { label:'Confirmed',       cls:'badge-confirmed', icon:'fa-check' },
+    preparing: { label:'Preparing',       cls:'badge-preparing', icon:'fa-fire' },
+    ready:     { label:'Ready for Pickup',cls:'badge-ready',     icon:'fa-bell' },
+    delivered: { label:'Delivered',       cls:'badge-delivered', icon:'fa-check-circle' },
+    cancelled: { label:'Cancelled',       cls:'badge-cancelled', icon:'fa-times-circle' },
   };
+  const activeStatuses = new Set(['confirmed','preparing','ready']);
 
-  let activeFilter = 'all', searchVal = '';
+  let allOrders = [], activeFilter = 'all', searchVal = '';
+
+  function fmtDate(ts) {
+    if (!ts) return '—';
+    const d = ts.toDate ? ts.toDate() : new Date(ts);
+    return d.toLocaleDateString('en-NG', { day:'numeric', month:'short', year:'numeric' })
+      + ' · ' + d.toLocaleTimeString('en-NG', { hour:'2-digit', minute:'2-digit' });
+  }
 
   function renderOrders() {
-    let list = orders;
-    if (activeFilter !== 'all') list = list.filter(o => o.status === activeFilter);
-    if (searchVal) list = list.filter(o =>
-      o.id.toLowerCase().includes(searchVal.toLowerCase()) ||
-      o.items.some(i => i.name.toLowerCase().includes(searchVal.toLowerCase()))
-    );
+    let list = allOrders;
+    if (activeFilter === 'active')    list = list.filter(o => activeStatuses.has(o.status));
+    else if (activeFilter !== 'all')  list = list.filter(o => o.status === activeFilter);
+    if (searchVal) {
+      const q = searchVal.toLowerCase();
+      list = list.filter(o =>
+        o.id.toLowerCase().includes(q) ||
+        (o.items || []).some(i => i.name.toLowerCase().includes(q))
+      );
+    }
 
     const el = document.getElementById('ordersList');
     if (!list.length) {
       el.innerHTML = `<div class="empty"><i class="fas fa-box-open"></i><p style="font-size:15px;font-weight:700;color:#0f172a">No orders found</p><p style="font-size:13px;color:#94a3b8">Try a different filter or <a href="index.html#menu" style="color:#0ea5e9">order some food</a>!</p></div>`;
       return;
     }
+
     el.innerHTML = list.map(o => {
-      const s = statusMap[o.status];
-      const itemsHtml = o.items.map(i => `
+      const s        = statusMap[o.status] || statusMap.confirmed;
+      const isActive = activeStatuses.has(o.status);
+      const itemsHtml = (o.items || []).map(i => `
         <div class="order-item">
-          <img class="item-img" src="${i.img}" alt="${i.name}" onerror="this.style.background='#e0f2fe';this.removeAttribute('src')" />
+          <img class="item-img" src="${i.img || ''}" alt="${i.name}"
+            onerror="this.style.background='#e0f2fe';this.removeAttribute('src')" />
           <div>
             <div class="item-name">${i.name}</div>
             <div class="item-qty">Qty: ${i.qty}</div>
           </div>
           <div class="item-price">₦${(i.price * i.qty).toLocaleString()}</div>
-        </div>
-      `).join('');
+        </div>`).join('');
 
-      const discHtml = o.discount ? `<span style="font-size:12px;color:#22c55e;font-weight:600"><i class="fas fa-tag"></i> −₦${o.discount.toLocaleString()} discount</span>` : '';
-      const actionBtn = o.status === 'cancelled'
-        ? `<button class="btn-outline" onclick="reorder('${o.id}')"><i class="fas fa-redo" style="margin-right:6px"></i>Reorder</button>`
-        : o.status === 'delivered'
-        ? `<button class="btn-sky" onclick="reorder('${o.id}')"><i class="fas fa-redo" style="margin-right:6px"></i>Reorder</button>`
-        : `<button class="btn-sky" disabled style="opacity:.6;cursor:default"><i class="fas fa-clock" style="margin-right:6px"></i>In Progress</button>`;
+      const ptsHtml = o.loyaltyEarned > 0
+        ? `<span style="font-size:12px;color:#0ea5e9;font-weight:600"><i class="fas fa-star"></i> +${o.loyaltyEarned} pts earned</span>` : '';
+      const discHtml = o.discount > 0
+        ? `<span style="font-size:12px;color:#22c55e;font-weight:600"><i class="fas fa-tag"></i> −₦${o.discount.toLocaleString()} discount</span>` : '';
+      const actionBtn = isActive
+        ? `<button class="btn-sky" disabled style="opacity:.6;cursor:default"><i class="fas fa-clock" style="margin-right:6px"></i>In Progress</button>`
+        : `<button class="btn-sky" onclick="reorder('${o.id}')"><i class="fas fa-redo" style="margin-right:6px"></i>Reorder</button>`;
 
       return `
         <div class="order-card">
           <div class="order-head">
             <div>
               <div class="order-id">${o.id}</div>
-              <div class="order-date"><i class="fas fa-calendar-alt" style="margin-right:5px"></i>${o.date}</div>
+              <div class="order-date"><i class="fas fa-calendar-alt" style="margin-right:5px"></i>${fmtDate(o.date)}</div>
             </div>
             <span class="badge ${s.cls}"><i class="fas ${s.icon}"></i> ${s.label}</span>
           </div>
           <div class="order-body">${itemsHtml}</div>
           <div class="order-foot">
-            <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
-              ${discHtml}
-              <div class="order-total">Total: ₦${o.total.toLocaleString()}</div>
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+              ${discHtml}${ptsHtml}
+              <div class="order-total">Total: ₦${(o.total || 0).toLocaleString()}</div>
             </div>
-            <div style="display:flex;gap:8px">
-              ${actionBtn}
-            </div>
+            <div style="display:flex;gap:8px">${actionBtn}</div>
           </div>
-        </div>
-      `;
+        </div>`;
     }).join('');
   }
 
-  function filterOrders(f, btn) {
+  function setFilter(f, btn) {
     activeFilter = f;
     document.querySelectorAll('.f-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     renderOrders();
   }
 
-  function searchOrders(v) { searchVal = v; renderOrders(); }
+  function setSearch(v) { searchVal = v; renderOrders(); }
 
   function reorder(id) {
-    toast(`Reordering ${id}… Redirecting to menu!`);
+    showToast('Redirecting to menu — add items to cart!');
     setTimeout(() => window.location.href = 'index.html#menu', 1800);
   }
 
   let toastTimer;
-  function toast(msg) {
+  function showToast(msg) {
     const t = document.getElementById('toast');
     document.getElementById('toastMsg').textContent = msg;
     t.classList.add('show');
@@ -303,7 +254,36 @@
     toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
   }
 
-  renderOrders();
+  /* ── Auth guard + load orders ───────────────────────────── */
+  firebase.auth().onAuthStateChanged(async user => {
+    if (!user) {
+      sessionStorage.setItem('forzaLoginRedirect', 'order-history.html');
+      window.location.href = 'login.html';
+      return;
+    }
+    try {
+      const snap = await firebase.firestore()
+        .collection('orders')
+        .where('userId', '==', user.uid)
+        .get();
+
+      allOrders = snap.docs
+        .map(d => ({ id: '#FZH-' + d.id.slice(-6).toUpperCase(), ...d.data() }))
+        .sort((a, b) => {
+          const ta = a.date?.toMillis ? a.date.toMillis() : 0;
+          const tb = b.date?.toMillis ? b.date.toMillis() : 0;
+          return tb - ta;
+        });
+
+      renderOrders();
+    } catch (err) {
+      console.error(err);
+      document.getElementById('ordersList').innerHTML =
+        '<div class="empty"><i class="fas fa-exclamation-circle"></i><p style="font-size:15px;font-weight:700;color:#0f172a">Could not load orders</p><p style="font-size:13px;color:#94a3b8">Please refresh the page.</p></div>';
+    } finally {
+      document.getElementById('loadOverlay').style.display = 'none';
+    }
+  });
 </script>
 </body>
 </html>

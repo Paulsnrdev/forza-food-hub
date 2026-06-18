@@ -7,6 +7,7 @@
 
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
 
@@ -417,6 +418,14 @@
     /* ── Nutrition badge ────────────────────────────────── */
     .nb { display:inline-flex;align-items:center;gap:6px;background:#e0f2fe;color:#0369a1;padding:5px 13px;border-radius:20px;font-size:12.5px;font-weight:500;margin:3px; }
 
+    /* ── Auth nav ───────────────────────────────────────── */
+    .nav-auth-name { font-size:13px;font-weight:600;color:rgba(255,255,255,.88); }
+    #hdr.scrolled .nav-auth-name { color:#475569; }
+    .nav-signout { background:none;border:none;font-size:13.5px;font-weight:600;color:rgba(255,255,255,.82);cursor:pointer;font-family:'Poppins',sans-serif;padding:7px 11px;border-radius:8px;transition:all .2s; }
+    .nav-signout:hover { color:#fff;background:rgba(255,255,255,.12); }
+    #hdr.scrolled .nav-signout { color:#475569; }
+    #hdr.scrolled .nav-signout:hover { color:#ef4444;background:#fee2e2; }
+
     /* ── Footer links ───────────────────────────────────── */
     .fl { color:#94a3b8;font-size:13.5px;text-decoration:none;transition:color .2s;display:block;padding:3px 0; }
     .fl:hover { color:#38bdf8; }
@@ -527,7 +536,9 @@
           <i class="fas fa-shopping-cart"></i>
           <span class="c-badge" id="navBdg">0</span>
         </button>
-        <a href="#menu" class="btn-now">Order Now</a>
+        <div id="authNav" style="display:flex;align-items:center;gap:8px">
+          <a href="login.html" class="btn-now">Sign In</a>
+        </div>
         <button class="hbg" id="hbg"><span></span><span></span><span></span></button>
       </div>
     </nav>
@@ -541,6 +552,9 @@
     <a href="#meal-plans" class="nlink">Meal Plans</a>
     <a href="#about"      class="nlink">About</a>
     <a href="#menu" class="btn-sky" style="margin-top:8px;justify-content:center">Order Now</a>
+    <div id="mobAuthNav" style="padding-top:8px;border-top:1px solid #e0f2fe;margin-top:6px">
+      <a href="login.html" class="nlink" style="color:#0ea5e9;font-weight:700">Sign In</a>
+    </div>
   </div>
 
   <!-- ════════════════════════════════════════════════════════
@@ -942,6 +956,27 @@
        JAVASCRIPT
   ════════════════════════════════════════════════════════ -->
   <script>
+    /* ── Auth state ─────────────────────────────────────────── */
+    firebase.auth().onAuthStateChanged(user => {
+      const authNav    = document.getElementById('authNav');
+      const mobAuthNav = document.getElementById('mobAuthNav');
+      if (user) {
+        const firstName = (user.displayName || 'User').split(' ')[0];
+        if (authNav) authNav.innerHTML = `
+          <span class="nav-auth-name">Hi, ${firstName}!</span>
+          <button class="nav-signout" id="navSignOut">Sign Out</button>`;
+        if (mobAuthNav) mobAuthNav.innerHTML = `
+          <span class="nlink" style="display:block;padding:12px 13px;color:#0f172a;font-weight:600">Hi, ${firstName}!</span>
+          <a href="my-account.html" class="nlink" style="color:#0369a1">My Account</a>
+          <button id="mobSignOut" style="display:block;width:100%;text-align:left;padding:12px 13px;background:none;border:none;cursor:pointer;font-family:'Poppins',sans-serif;font-size:13.5px;font-weight:500;color:#ef4444">Sign Out</button>`;
+        document.getElementById('navSignOut')?.addEventListener('click', () => firebase.auth().signOut());
+        document.getElementById('mobSignOut')?.addEventListener('click', () => firebase.auth().signOut());
+      } else {
+        if (authNav) authNav.innerHTML = '<a href="login.html" class="btn-now">Sign In</a>';
+        if (mobAuthNav) mobAuthNav.innerHTML = '<a href="login.html" class="nlink" style="color:#0ea5e9;font-weight:700">Sign In</a>';
+      }
+    });
+
     /* ── Menu data (loaded from Firestore) ─────────────────── */
     let ITEMS = [];
 
@@ -1135,11 +1170,63 @@
       });
 
       /* checkout */
-      document.getElementById('coBtn').addEventListener('click', () => {
+      document.getElementById('coBtn').addEventListener('click', async () => {
         if (!cart.length) return;
-        closeCartFn();
-        clearCart();
-        setTimeout(openModal, 280);
+        const user = firebase.auth().currentUser;
+        if (!user) {
+          sessionStorage.setItem('forzaLoginRedirect', 'index.html');
+          window.location.href = 'login.html';
+          return;
+        }
+        const coBtn = document.getElementById('coBtn');
+        coBtn.disabled = true;
+        coBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Placing Order…';
+        const sub        = total();
+        const disc       = sub >= 1000 ? Math.round(sub * .1) : 0;
+        const finalTotal = sub - disc;
+        const ptsEarned  = Math.floor(finalTotal / 20);
+        try {
+          const db       = firebase.firestore();
+          const orderRef = db.collection('orders').doc();
+          const userRef  = db.collection('users').doc(user.uid);
+          const batch    = db.batch();
+          batch.set(orderRef, {
+            userId: user.uid,
+            date:   firebase.firestore.FieldValue.serverTimestamp(),
+            status: 'confirmed',
+            items:  cart.map(i => ({ name:i.name, price:i.price, qty:i.qty, img:i.img })),
+            subtotal: sub, discount: disc, total: finalTotal, loyaltyEarned: ptsEarned,
+          });
+          batch.update(userRef, {
+            totalOrders:   firebase.firestore.FieldValue.increment(1),
+            totalSpend:    firebase.firestore.FieldValue.increment(finalTotal),
+            totalSavings:  firebase.firestore.FieldValue.increment(disc),
+            loyaltyPoints: firebase.firestore.FieldValue.increment(ptsEarned),
+          });
+          if (ptsEarned > 0) {
+            const histRef = db.collection('pointsHistory').doc();
+            batch.set(histRef, {
+              userId: user.uid, type: 'earn', points: ptsEarned,
+              description: `Order — earned ${ptsEarned} point${ptsEarned !== 1 ? 's' : ''}`,
+              date: firebase.firestore.FieldValue.serverTimestamp(),
+            });
+          }
+          await batch.commit();
+          closeCartFn();
+          clearCart();
+          const refId = '#FZH-' + orderRef.id.slice(-6).toUpperCase();
+          setTimeout(() => {
+            document.getElementById('oRef').textContent = refId;
+            document.getElementById('oModal').classList.add('open');
+            document.body.style.overflow = 'hidden';
+          }, 280);
+        } catch (err) {
+          console.error(err);
+          toast('Order failed. Please try again.');
+        } finally {
+          coBtn.disabled = false;
+          coBtn.innerHTML = '<i class="fas fa-lock"></i> Checkout';
+        }
       });
 
       /* clear cart */
