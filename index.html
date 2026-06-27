@@ -1197,12 +1197,12 @@
             items:  cart.map(i => ({ name:i.name, price:i.price, qty:i.qty, img:i.img })),
             subtotal: sub, discount: disc, total: finalTotal, loyaltyEarned: ptsEarned,
           });
-          batch.update(userRef, {
+          batch.set(userRef, {
             totalOrders:   firebase.firestore.FieldValue.increment(1),
             totalSpend:    firebase.firestore.FieldValue.increment(finalTotal),
             totalSavings:  firebase.firestore.FieldValue.increment(disc),
             loyaltyPoints: firebase.firestore.FieldValue.increment(ptsEarned),
-          });
+          }, { merge: true });
           if (ptsEarned > 0) {
             const histRef = db.collection('pointsHistory').doc();
             batch.set(histRef, {
