@@ -523,14 +523,15 @@
     try {
       const firstName = document.getElementById('pfFirstName').value.trim();
       const lastName  = document.getElementById('pfLastName').value.trim();
-      await db.collection('users').doc(currentUid).update({
+      await db.collection('users').doc(currentUid).set({
         firstName,
         lastName,
         phone:   document.getElementById('pfPhone').value.trim(),
         faculty: document.getElementById('pfFaculty').value,
         level:   document.getElementById('pfLevel').value,
         hostel:  document.getElementById('pfHostel').value.trim(),
-      });
+        email:   firebase.auth().currentUser?.email || '',
+      }, { merge: true });
       await firebase.auth().currentUser.updateProfile({
         displayName: (firstName + ' ' + lastName).trim(),
       });
