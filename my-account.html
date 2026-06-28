@@ -460,10 +460,14 @@
       const doc  = await db.collection('users').doc(currentUid).get();
       const data = doc.exists ? doc.data() : {};
 
-      const firstName = data.firstName || '';
-      const lastName  = data.lastName  || '';
-      const fullName  = (firstName + ' ' + lastName).trim() || 'User';
-      const initials  = ((firstName[0] || '') + (lastName[0] || '')).toUpperCase() || '?';
+      const authUser  = firebase.auth().currentUser;
+      const authName  = authUser?.displayName || '';
+      const firstName = data.firstName || authName.split(' ')[0] || '';
+      const lastName  = data.lastName  || authName.split(' ').slice(1).join(' ') || '';
+      const fullName  = (firstName + ' ' + lastName).trim()
+        || authUser?.email?.split('@')[0] || 'User';
+      const initials  = ((firstName[0] || '') + (lastName[0] || '')).toUpperCase()
+        || (fullName[0] || '?').toUpperCase();
 
       /* Sidebar snapshot */
       document.getElementById('avatarInitials').textContent = initials;
@@ -491,8 +495,8 @@
       document.getElementById('walletCardBal').textContent  = '₦' + wallet.toLocaleString();
 
       /* Profile form */
-      document.getElementById('pfFirstName').value  = firstName;
-      document.getElementById('pfLastName').value   = lastName;
+      document.getElementById('pfFirstName').value  = data.firstName || firstName;
+      document.getElementById('pfLastName').value   = data.lastName  || lastName;
       document.getElementById('pfStudentId').value  = data.studentID    || '';
       document.getElementById('pfPhone').value      = data.phone        || '';
       document.getElementById('pfEmail').value      = data.email        || firebase.auth().currentUser?.email || '';

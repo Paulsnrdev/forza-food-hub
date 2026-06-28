@@ -961,7 +961,9 @@
       const authNav    = document.getElementById('authNav');
       const mobAuthNav = document.getElementById('mobAuthNav');
       if (user) {
-        const firstName = (user.displayName || 'User').split(' ')[0];
+        const firstName = user.displayName
+          ? user.displayName.split(' ')[0]
+          : (user.email ? user.email.split('@')[0] : 'User');
         if (authNav) authNav.innerHTML = `
           <span class="nav-auth-name">Hi, ${firstName}!</span>
           <button class="nav-signout" id="navSignOut">Sign Out</button>`;
