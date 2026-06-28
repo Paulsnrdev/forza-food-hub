@@ -1184,7 +1184,6 @@
         const sub        = total();
         const disc       = sub >= 1000 ? Math.round(sub * .1) : 0;
         const finalTotal = sub - disc;
-        const ptsEarned  = Math.floor(finalTotal / 20);
         try {
           const db       = firebase.firestore();
           const orderRef = db.collection('orders').doc();
@@ -1195,22 +1194,13 @@
             date:   firebase.firestore.FieldValue.serverTimestamp(),
             status: 'confirmed',
             items:  cart.map(i => ({ name:i.name, price:i.price, qty:i.qty, img:i.img })),
-            subtotal: sub, discount: disc, total: finalTotal, loyaltyEarned: ptsEarned,
+            subtotal: sub, discount: disc, total: finalTotal,
           });
           batch.set(userRef, {
-            totalOrders:   firebase.firestore.FieldValue.increment(1),
-            totalSpend:    firebase.firestore.FieldValue.increment(finalTotal),
-            totalSavings:  firebase.firestore.FieldValue.increment(disc),
-            loyaltyPoints: firebase.firestore.FieldValue.increment(ptsEarned),
+            totalOrders:  firebase.firestore.FieldValue.increment(1),
+            totalSpend:   firebase.firestore.FieldValue.increment(finalTotal),
+            totalSavings: firebase.firestore.FieldValue.increment(disc),
           }, { merge: true });
-          if (ptsEarned > 0) {
-            const histRef = db.collection('pointsHistory').doc();
-            batch.set(histRef, {
-              userId: user.uid, type: 'earn', points: ptsEarned,
-              description: `Order — earned ${ptsEarned} point${ptsEarned !== 1 ? 's' : ''}`,
-              date: firebase.firestore.FieldValue.serverTimestamp(),
-            });
-          }
           await batch.commit();
           closeCartFn();
           clearCart();

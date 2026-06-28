@@ -432,9 +432,9 @@
 
 <script>
   const plans = {
-    basic:   { name:'Basic Plan',   price:'₦5,000',  rawPrice:5000,  savings:'₦1,200', pts:500,  features:['5 Lunches per week','1 Free Snack daily'] },
-    student: { name:'Student Plan', price:'₦8,500',  rawPrice:8500,  savings:'₦3,500', pts:1700, features:['5 Lunches + 5 Breakfasts','2 Free Snacks daily','Priority Ordering'] },
-    premium: { name:'Premium Plan', price:'₦12,000', rawPrice:12000, savings:'₦6,000+',pts:3600, features:['Unlimited Meals','All Beverages','Free Snacks Anytime','VIP Priority Access'] },
+    basic:   { name:'Basic Plan',   price:'₦5,000',  rawPrice:5000,  savings:'₦1,200', features:['5 Lunches per week','1 Free Snack daily'] },
+    student: { name:'Student Plan', price:'₦8,500',  rawPrice:8500,  savings:'₦3,500', features:['5 Lunches + 5 Breakfasts','2 Free Snacks daily','Priority Ordering'] },
+    premium: { name:'Premium Plan', price:'₦12,000', rawPrice:12000, savings:'₦6,000+',features:['Unlimited Meals','All Beverages','Free Snacks Anytime','VIP Priority Access'] },
   };
 
   let selected = null;
@@ -547,7 +547,6 @@
       const db      = firebase.firestore();
       const planRef = db.collection('mealPlans').doc();
       const userRef = db.collection('users').doc(currentUser.uid);
-      const histRef = db.collection('pointsHistory').doc();
       const batch   = db.batch();
 
       batch.set(planRef, {
@@ -561,18 +560,9 @@
         createdAt:     firebase.firestore.FieldValue.serverTimestamp(),
       });
 
-      batch.update(userRef, {
+      batch.set(userRef, {
         activeMealPlan: selected,
-        loyaltyPoints:  firebase.firestore.FieldValue.increment(p.pts),
-      });
-
-      batch.set(histRef, {
-        userId:      currentUser.uid,
-        type:        'earn',
-        points:      p.pts,
-        description: `${p.name} signup bonus`,
-        date:        firebase.firestore.FieldValue.serverTimestamp(),
-      });
+      }, { merge: true });
 
       await batch.commit();
 
@@ -580,7 +570,7 @@
       document.getElementById('confirmedDate').textContent =
         startDate.toLocaleDateString('en-NG', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
       goToStep(4);
-      showToast(`Plan activated! +${p.pts.toLocaleString()} loyalty points earned 🎉`);
+      showToast('Meal plan activated successfully!');
     } catch (err) {
       console.error(err);
       showToast('Payment confirmation failed. Please try again.');

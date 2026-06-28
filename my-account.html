@@ -245,11 +245,6 @@
             <div style="font-size:12px;color:#64748b;margin-bottom:6px">Student ID</div>
             <div style="font-size:13px;font-weight:700;color:#0f172a" id="profileStudentId">—</div>
           </div>
-          <div style="margin-top:12px;padding-top:12px;border-top:1px solid #f0f9ff">
-            <a href="loyalty-points.html" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:#0ea5e9;text-decoration:none">
-              <i class="fas fa-star"></i> <span id="profilePoints">0</span> Loyalty Points
-            </a>
-          </div>
         </div>
       </div>
 
@@ -277,9 +272,6 @@
           </p>
           <a href="order-history.html" style="display:flex;align-items:center;gap:9px;padding:10px 0;border-bottom:1px solid #f0f9ff;color:#334155;font-size:13px;text-decoration:none;transition:color .2s" onmouseover="this.style.color='#0ea5e9'" onmouseout="this.style.color='#334155'">
             <i class="fas fa-receipt" style="color:#0ea5e9;width:16px"></i> My Orders
-          </a>
-          <a href="loyalty-points.html" style="display:flex;align-items:center;gap:9px;padding:10px 0;border-bottom:1px solid #f0f9ff;color:#334155;font-size:13px;text-decoration:none;transition:color .2s" onmouseover="this.style.color='#0ea5e9'" onmouseout="this.style.color='#334155'">
-            <i class="fas fa-star" style="color:#0ea5e9;width:16px"></i> Loyalty Points
           </a>
           <a href="meal-plan-signup.html" style="display:flex;align-items:center;gap:9px;padding:10px 0;color:#334155;font-size:13px;text-decoration:none;transition:color .2s" onmouseover="this.style.color='#0ea5e9'" onmouseout="this.style.color='#334155'">
             <i class="fas fa-calendar-alt" style="color:#0ea5e9;width:16px"></i> Meal Plans
@@ -479,7 +471,6 @@
       document.getElementById('profileMeta').textContent    =
         [data.faculty, data.level].filter(Boolean).join(' · ');
       document.getElementById('profileStudentId').textContent = data.studentID || '—';
-      document.getElementById('profilePoints').textContent    = (data.loyaltyPoints || 0).toLocaleString();
 
       if (data.memberSince?.toDate) {
         document.getElementById('profileMemberSince').textContent =

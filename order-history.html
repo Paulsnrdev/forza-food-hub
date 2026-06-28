@@ -202,8 +202,6 @@
           <div class="item-price">₦${(i.price * i.qty).toLocaleString()}</div>
         </div>`).join('');
 
-      const ptsHtml = o.loyaltyEarned > 0
-        ? `<span style="font-size:12px;color:#0ea5e9;font-weight:600"><i class="fas fa-star"></i> +${o.loyaltyEarned} pts earned</span>` : '';
       const discHtml = o.discount > 0
         ? `<span style="font-size:12px;color:#22c55e;font-weight:600"><i class="fas fa-tag"></i> −₦${o.discount.toLocaleString()} discount</span>` : '';
       const actionBtn = isActive
@@ -222,7 +220,7 @@
           <div class="order-body">${itemsHtml}</div>
           <div class="order-foot">
             <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-              ${discHtml}${ptsHtml}
+              ${discHtml}
               <div class="order-total">Total: ₦${(o.total || 0).toLocaleString()}</div>
             </div>
             <div style="display:flex;gap:8px">${actionBtn}</div>

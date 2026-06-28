@@ -266,10 +266,7 @@
     <div class="success-state" id="successState">
       <div class="success-icon">🎉</div>
       <h2 style="font-size:1.4rem;font-weight:900;color:#0f172a;margin:0 0 8px">Thank You!</h2>
-      <p style="font-size:13.5px;color:#64748b;margin:0 0 10px">Your feedback has been submitted successfully.</p>
-      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:11px 18px;display:inline-flex;align-items:center;gap:8px;margin-bottom:16px;font-size:13.5px;font-weight:700;color:#15803d">
-        <i class="fas fa-star" style="color:#22c55e"></i> You earned <span id="fbPtsEarned">50</span> loyalty points!
-      </div>
+      <p style="font-size:13.5px;color:#64748b;margin:0 0 20px">Your feedback has been submitted successfully.</p>
       <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
         <a href="index.html#menu" style="background:linear-gradient(135deg,#0284c7,#0ea5e9);color:#fff;border-radius:10px;padding:11px 22px;font-size:13.5px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:7px"><i class="fas fa-utensils"></i> Order Again</a>
       </div>
@@ -366,12 +363,7 @@
     const db        = firebase.firestore();
 
     try {
-      const batch   = db.batch();
-      const fbRef   = db.collection('feedback').doc();
-      const userRef = db.collection('users').doc(currentUser.uid);
-      const histRef = db.collection('pointsHistory').doc();
-
-      batch.set(fbRef, {
+      await db.collection('feedback').add({
         userId:    currentUser.uid,
         date:      firebase.firestore.FieldValue.serverTimestamp(),
         overall:   overallVal,
@@ -387,23 +379,9 @@
         comment,
       });
 
-      batch.update(userRef, {
-        loyaltyPoints: firebase.firestore.FieldValue.increment(50),
-      });
-
-      batch.set(histRef, {
-        userId:      currentUser.uid,
-        type:        'earn',
-        points:      50,
-        description: 'Feedback bonus — thanks for helping us improve!',
-        date:        firebase.firestore.FieldValue.serverTimestamp(),
-      });
-
-      await batch.commit();
-
       document.getElementById('feedbackCard').querySelector('form').style.display = 'none';
       document.getElementById('successState').style.display = 'block';
-      showToast('Feedback submitted! +50 loyalty points earned 🎉');
+      showToast('Feedback submitted! Thank you!');
     } catch (err) {
       console.error(err);
       showToast('Submission failed. Please try again.');

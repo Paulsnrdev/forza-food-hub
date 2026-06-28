@@ -238,22 +238,11 @@
           hostel:        '',
           dietaryPrefs:  '',
           memberSince:   firebase.firestore.FieldValue.serverTimestamp(),
-          loyaltyPoints: 100,          // welcome bonus
           totalOrders:   0,
           totalSpend:    0,
           totalSavings:  0,
           walletBalance: 0,
           activeMealPlan: null,
-          tier:          'Bronze',
-        });
-
-        // Add welcome points history
-        await firebase.firestore().collection('pointsHistory').add({
-          userId:      uid,
-          type:        'earn',
-          points:      100,
-          description: 'Welcome bonus — thanks for joining FORZA!',
-          date:        firebase.firestore.FieldValue.serverTimestamp(),
         });
 
         window.location.href = 'index.html';
